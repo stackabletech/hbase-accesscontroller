@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>tech.stackable</groupId>
-  <artifactId>hdfs-accesscontroller</artifactId>
+  <artifactId>hbase-opa-accesscontroller</artifactId>
   <version>0.1.0</version>
 
   <name>Apache Hadoop HBase OPA Access Controller</name>
@@ -36,21 +36,21 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
     <cleanthat.version>2.17</cleanthat.version>
-    <error-prone.version>2.24.1</error-prone.version>
+    <error-prone.version>2.27.1</error-prone.version>
     <google-java-format.version>1.19.2</google-java-format.version>
 
     <maven-clean-plugin.version>3.3.2</maven-clean-plugin.version>
-    <maven-compiler-plugin.version>3.12.1</maven-compiler-plugin.version>
-    <maven-deploy-plugin.version>3.1.1</maven-deploy-plugin.version>
+    <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
+    <maven-deploy-plugin.version>3.1.2</maven-deploy-plugin.version>
     <maven-enforcer-plugin.version>3.4.1</maven-enforcer-plugin.version>
-    <maven-install-plugin.version>3.1.1</maven-install-plugin.version>
-    <maven-jar-plugin.version>3.3.0</maven-jar-plugin.version>
+    <maven-install-plugin.version>3.1.2</maven-install-plugin.version>
+    <maven-jar-plugin.version>3.4.1</maven-jar-plugin.version>
     <maven-resources-plugin.version>3.3.1</maven-resources-plugin.version>
     <maven-site-plugin.version>3.12.1</maven-site-plugin.version>
     <maven-surefire-plugin.version>3.2.5</maven-surefire-plugin.version>
     <spotless-maven-plugin.version>2.43.0</spotless-maven-plugin.version>
 
-    <hbase.version>2.4.12</hbase.version>
+    <hbase.version>2.6.0</hbase.version>
     <hbase.protobuf.version>2.5.0</hbase.protobuf.version>
   </properties>
 
@@ -59,11 +59,13 @@
         <groupId>com.google.protobuf</groupId>
         <artifactId>protobuf-java</artifactId>
         <version>${hbase.protobuf.version}</version>
+        <scope>provided</scope>
     </dependency>
     <dependency>
         <groupId>org.apache.hbase</groupId>
         <artifactId>hbase-client</artifactId>
         <version>${hbase.version}</version>
+        <scope>provided</scope>
         <exclusions>
             <exclusion>
                 <artifactId>maven-release-plugin</artifactId>
@@ -75,14 +77,13 @@
         <groupId>org.apache.hbase</groupId>
         <artifactId>hbase-server</artifactId>
         <version>${hbase.version}</version>
+        <scope>provided</scope>
         <exclusions>
-
             <exclusion>
                 <artifactId>maven-release-plugin</artifactId>
                 <groupId>org.apache.maven.plugins</groupId>
             </exclusion>
         </exclusions>
-        <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>
@@ -93,7 +94,7 @@
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
-      <version>4.13.1</version>
+      <version>4.13.2</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -105,7 +106,7 @@
         <artifactId>maven-clean-plugin</artifactId>
         <version>${maven-clean-plugin.version}</version>
       </plugin>
-      <plugin>
+      <!--plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
         <version>${maven-compiler-plugin.version}</version>
@@ -122,11 +123,39 @@
             </path>
           </annotationProcessorPaths>
         </configuration>
-      </plugin>
+      </plugin-->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-deploy-plugin</artifactId>
         <version>${maven-deploy-plugin.version}</version>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <version>${maven-enforcer-plugin.version}</version>
+        <configuration>
+          <rules>
+            <banDuplicatePomDependencyVersions/>
+            <!--banDynamicVersions/-->
+            <banDuplicatePomDependencyVersions/>
+            <!--banDynamicVersions/-->
+            <requireJavaVersion>
+              <version>${java.version}</version>
+            </requireJavaVersion>
+            <requireMavenVersion>
+              <version>3.3.9</version>
+            </requireMavenVersion>
+            <!--requirePluginVersions/-->
+          </rules>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -146,7 +175,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-shade-plugin</artifactId>
-        <version>3.5.1</version>
+        <version>3.5.3</version>
         <executions>
           <execution>
             <goals>
