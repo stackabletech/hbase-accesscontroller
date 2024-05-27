@@ -28,6 +28,7 @@ public class OpenPolicyAgentAccessController extends AccessController {
 
   @Override
   public void start(CoprocessorEnvironment env) throws IOException {
+    LOG.info("Starting OpenPolicyAgentAccessController...");
     CompoundConfiguration conf = new CompoundConfiguration();
     conf.add(env.getConfiguration());
     this.userProvider = UserProvider.instantiate(env.getConfiguration());
@@ -40,6 +41,7 @@ public class OpenPolicyAgentAccessController extends AccessController {
    */
   private User getActiveUser(ObserverContext<?> ctx) throws IOException {
     // for non-rpc handling, fallback to system user
+    LOG.info("Active user from [{}]", ctx);
     Optional<User> optionalUser = ctx.getCaller();
     if (optionalUser.isPresent()) {
       return optionalUser.get();
@@ -49,10 +51,14 @@ public class OpenPolicyAgentAccessController extends AccessController {
 
   public void requireAccess(
       ObserverContext<?> ctx, String request, TableName tableName, Permission.Action... permissions)
-      throws IOException {}
+      throws IOException {
+    LOG.info("requireAccess from {} for {} on {}", ctx, request, tableName);
+  }
 
   public void requirePermission(ObserverContext<?> ctx, String request, Permission.Action perm)
-      throws IOException {}
+      throws IOException {
+    LOG.info("requirePermission from {} for {} with {}", ctx, request, perm);
+  }
 
   public void requireGlobalPermission(
       ObserverContext<?> ctx,
@@ -60,15 +66,32 @@ public class OpenPolicyAgentAccessController extends AccessController {
       Permission.Action perm,
       TableName tableName,
       Map<byte[], ? extends Collection<byte[]>> familyMap)
-      throws IOException {}
+      throws IOException {
+    LOG.info(
+        "requireGlobalPermission from {} for {} with {}, {}, {}",
+        ctx,
+        request,
+        perm,
+        tableName,
+        familyMap);
+  }
 
   public void requireGlobalPermission(
       ObserverContext<?> ctx, String request, Permission.Action perm, String namespace)
-      throws IOException {}
+      throws IOException {
+    LOG.info("requireGlobalPermission from {} for {} with {}, {}", ctx, request, perm, namespace);
+  }
 
   public void requireNamespacePermission(
       ObserverContext<?> ctx, String request, String namespace, Permission.Action... permissions)
-      throws IOException {}
+      throws IOException {
+    LOG.info(
+        "requireNamespacePermission from {} for {} with {}, {}",
+        ctx,
+        request,
+        namespace,
+        permissions);
+  }
 
   public void requireNamespacePermission(
       ObserverContext<?> ctx,
@@ -77,7 +100,15 @@ public class OpenPolicyAgentAccessController extends AccessController {
       TableName tableName,
       Map<byte[], ? extends Collection<byte[]>> familyMap,
       Permission.Action... permissions)
-      throws IOException {}
+      throws IOException {
+    LOG.info(
+        "requireNamespacePermission from {} for {} with {}, {}, {}",
+        ctx,
+        request,
+        namespace,
+        familyMap,
+        permissions);
+  }
 
   public void requirePermission(
       ObserverContext<?> ctx,
@@ -86,7 +117,9 @@ public class OpenPolicyAgentAccessController extends AccessController {
       byte[] family,
       byte[] qualifier,
       Permission.Action... permissions)
-      throws IOException {}
+      throws IOException {
+    LOG.info("requirePermission from {} for {} with {}, {}", ctx, request, tableName, permissions);
+  }
 
   public void requireTablePermission(
       ObserverContext<?> ctx,
@@ -95,7 +128,10 @@ public class OpenPolicyAgentAccessController extends AccessController {
       byte[] family,
       byte[] qualifier,
       Permission.Action... permissions)
-      throws IOException {}
+      throws IOException {
+    LOG.info(
+        "requireTablePermission from {} for {} with {}, {}", ctx, request, tableName, permissions);
+  }
 
   public void checkLockPermissions(
       ObserverContext<?> ctx,
@@ -103,35 +139,58 @@ public class OpenPolicyAgentAccessController extends AccessController {
       TableName tableName,
       RegionInfo[] regionInfos,
       String reason)
-      throws IOException {}
+      throws IOException {
+    LOG.info(
+        "checkLockPermissions from {} for {} with {}, {}, {}",
+        ctx,
+        namespace,
+        tableName,
+        regionInfos,
+        reason);
+  }
 
   @Override
   public void grant(
       RpcController rpcController,
       AccessControlProtos.GrantRequest grantRequest,
-      RpcCallback<AccessControlProtos.GrantResponse> rpcCallback) {}
+      RpcCallback<AccessControlProtos.GrantResponse> rpcCallback) {
+    LOG.info("grant for {} with {}, {}", rpcController, grantRequest, rpcCallback);
+  }
 
   @Override
   public void revoke(
       RpcController rpcController,
       AccessControlProtos.RevokeRequest revokeRequest,
-      RpcCallback<AccessControlProtos.RevokeResponse> rpcCallback) {}
+      RpcCallback<AccessControlProtos.RevokeResponse> rpcCallback) {
+    LOG.info("revoke for {} with {}, {}", rpcController, revokeRequest, rpcCallback);
+  }
 
   @Override
   public void getUserPermissions(
       RpcController rpcController,
       AccessControlProtos.GetUserPermissionsRequest getUserPermissionsRequest,
-      RpcCallback<AccessControlProtos.GetUserPermissionsResponse> rpcCallback) {}
+      RpcCallback<AccessControlProtos.GetUserPermissionsResponse> rpcCallback) {
+    LOG.info(
+        "getUserPermissions for {} with {}, {}",
+        rpcController,
+        getUserPermissionsRequest,
+        rpcCallback);
+  }
 
   @Override
   public void checkPermissions(
       RpcController rpcController,
       AccessControlProtos.CheckPermissionsRequest checkPermissionsRequest,
-      RpcCallback<AccessControlProtos.CheckPermissionsResponse> rpcCallback) {}
+      RpcCallback<AccessControlProtos.CheckPermissionsResponse> rpcCallback) {
+    LOG.info(
+        "checkPermissions for {} with {}, {}", rpcController, checkPermissionsRequest, rpcCallback);
+  }
 
   @Override
   public void hasPermission(
       RpcController rpcController,
       AccessControlProtos.HasPermissionRequest hasPermissionRequest,
-      RpcCallback<AccessControlProtos.HasPermissionResponse> rpcCallback) {}
+      RpcCallback<AccessControlProtos.HasPermissionResponse> rpcCallback) {
+    LOG.info("hasPermission for {} with {}, {}", rpcController, hasPermissionRequest, rpcCallback);
+  }
 }
