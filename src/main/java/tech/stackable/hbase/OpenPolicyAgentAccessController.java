@@ -10,8 +10,7 @@ import org.apache.hadoop.hbase.CompoundConfiguration;
 import org.apache.hadoop.hbase.CoprocessorEnvironment;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.RegionInfo;
-import org.apache.hadoop.hbase.coprocessor.ObserverContext;
-import org.apache.hadoop.hbase.coprocessor.RegionCoprocessorEnvironment;
+import org.apache.hadoop.hbase.coprocessor.*;
 import org.apache.hadoop.hbase.protobuf.generated.AccessControlProtos;
 import org.apache.hadoop.hbase.security.User;
 import org.apache.hadoop.hbase.security.UserProvider;
@@ -19,7 +18,16 @@ import org.apache.hadoop.hbase.security.access.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class OpenPolicyAgentAccessController extends AccessController {
+public class OpenPolicyAgentAccessController
+    implements MasterCoprocessor,
+        RegionCoprocessor,
+        RegionServerCoprocessor,
+        AccessControlProtos.AccessControlService.Interface,
+        MasterObserver,
+        RegionObserver,
+        RegionServerObserver,
+        EndpointObserver,
+        BulkLoadObserver {
 
   private static final Logger LOG = LoggerFactory.getLogger(OpenPolicyAgentAccessController.class);
   private RegionCoprocessorEnvironment regionEnv;
