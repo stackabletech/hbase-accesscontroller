@@ -3,11 +3,11 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>tech.stackable</groupId>
-  <artifactId>hbase-opa-accesscontroller</artifactId>
+  <artifactId>hbase-opa-authorizer</artifactId>
   <version>0.1.0</version>
 
-  <name>Apache Hadoop HBase OPA Access Controller</name>
-  <url>https://github.com/stackabletech/hbase-accesscontroller/</url>
+  <name>Apache Hadoop HBase OPA Authorizer</name>
+  <url>https://github.com/stackabletech/hbase-opa-authorizer/</url>
   <organization>
     <name>Stackable GmbH</name>
     <url>https://stackable.tech</url>
@@ -21,11 +21,11 @@
     <connection>scm:git:${project.scm.url}</connection>
     <developerConnection>scm:git:${project.scm.url}</developerConnection>
     <tag>HEAD</tag>
-    <url>git@github.com:stackabletech/hbase-accesscontroller.git</url>
+    <url>git@github.com:stackabletech/hbase-opa-authorizer.git</url>
   </scm>
   <issueManagement>
     <system>GitHub</system>
-    <url>https://github.com/stackabletech/hbase-accesscontroller/issues</url>
+    <url>https://github.com/stackabletech/hbase-opa-authorizer/issues</url>
   </issueManagement>
 
   <properties>

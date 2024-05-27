@@ -2,26 +2,22 @@ package tech.stackable.hbase;
 
 import com.google.protobuf.RpcCallback;
 import com.google.protobuf.RpcController;
-import org.apache.hadoop.conf.Configuration;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Optional;
 import org.apache.hadoop.hbase.CompoundConfiguration;
 import org.apache.hadoop.hbase.CoprocessorEnvironment;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.RegionInfo;
 import org.apache.hadoop.hbase.coprocessor.ObserverContext;
 import org.apache.hadoop.hbase.coprocessor.RegionCoprocessorEnvironment;
-import org.apache.hadoop.hbase.io.hfile.HFile;
 import org.apache.hadoop.hbase.protobuf.generated.AccessControlProtos;
-import org.apache.hadoop.hbase.regionserver.Region;
 import org.apache.hadoop.hbase.security.User;
 import org.apache.hadoop.hbase.security.UserProvider;
 import org.apache.hadoop.hbase.security.access.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-import java.util.Collection;
-import java.util.Map;
-import java.util.Optional;
 
 public class OpenPolicyAgentAccessController extends AccessController {
 
@@ -51,54 +47,63 @@ public class OpenPolicyAgentAccessController extends AccessController {
     return userProvider.getCurrent();
   }
 
-  public void requireAccess(ObserverContext<?> ctx, String request, TableName tableName,
-                            Permission.Action... permissions) throws IOException {
+  public void requireAccess(
+      ObserverContext<?> ctx, String request, TableName tableName, Permission.Action... permissions)
+      throws IOException {}
 
-  }
+  public void requirePermission(ObserverContext<?> ctx, String request, Permission.Action perm)
+      throws IOException {}
 
-  public void requirePermission(ObserverContext<?> ctx, String request,
-                                Permission.Action perm) throws IOException {
+  public void requireGlobalPermission(
+      ObserverContext<?> ctx,
+      String request,
+      Permission.Action perm,
+      TableName tableName,
+      Map<byte[], ? extends Collection<byte[]>> familyMap)
+      throws IOException {}
 
-  }
+  public void requireGlobalPermission(
+      ObserverContext<?> ctx, String request, Permission.Action perm, String namespace)
+      throws IOException {}
 
-  public void requireGlobalPermission(ObserverContext<?> ctx, String request,
-                                      Permission.Action perm, TableName tableName,
-                                      Map<byte[], ? extends Collection<byte[]>> familyMap) throws IOException {
+  public void requireNamespacePermission(
+      ObserverContext<?> ctx, String request, String namespace, Permission.Action... permissions)
+      throws IOException {}
 
-  }
+  public void requireNamespacePermission(
+      ObserverContext<?> ctx,
+      String request,
+      String namespace,
+      TableName tableName,
+      Map<byte[], ? extends Collection<byte[]>> familyMap,
+      Permission.Action... permissions)
+      throws IOException {}
 
-  public void requireGlobalPermission(ObserverContext<?> ctx, String request,
-                                      Permission.Action perm, String namespace) throws IOException {
+  public void requirePermission(
+      ObserverContext<?> ctx,
+      String request,
+      TableName tableName,
+      byte[] family,
+      byte[] qualifier,
+      Permission.Action... permissions)
+      throws IOException {}
 
-  }
+  public void requireTablePermission(
+      ObserverContext<?> ctx,
+      String request,
+      TableName tableName,
+      byte[] family,
+      byte[] qualifier,
+      Permission.Action... permissions)
+      throws IOException {}
 
-  public void requireNamespacePermission(ObserverContext<?> ctx, String request, String namespace,
-                                         Permission.Action... permissions) throws IOException {
-
-  }
-
-  public void requireNamespacePermission(ObserverContext<?> ctx, String request, String namespace,
-                                         TableName tableName, Map<byte[], ? extends Collection<byte[]>> familyMap,
-                                         Permission.Action... permissions) throws IOException {
-
-  }
-
-  public void requirePermission(ObserverContext<?> ctx, String request, TableName tableName,
-                                byte[] family, byte[] qualifier, Permission.Action... permissions) throws IOException {
-
-  }
-
-  public void requireTablePermission(ObserverContext<?> ctx, String request,
-                                     TableName tableName,byte[] family, byte[] qualifier,
-                                     Permission.Action... permissions) throws IOException {
-
-  }
-
-  public void checkLockPermissions(ObserverContext<?> ctx, String namespace,
-                                   TableName tableName, RegionInfo[] regionInfos, String reason)
-          throws IOException {
-
-  }
+  public void checkLockPermissions(
+      ObserverContext<?> ctx,
+      String namespace,
+      TableName tableName,
+      RegionInfo[] regionInfos,
+      String reason)
+      throws IOException {}
 
   @Override
   public void grant(
