@@ -110,4 +110,20 @@ public class OpenPolicyAgentAccessController
     LOG.info("prePut2...");
     throw new AccessDeniedException("Insufficient permissions!");
   }
+
+  @Override
+  public void preCreateTable(
+      ObserverContext<MasterCoprocessorEnvironment> c, TableDescriptor desc, RegionInfo[] regions)
+      throws IOException {
+    LOG.info("preCreateTable...");
+  }
+
+  @Override
+  public void postCompletedCreateTableAction(
+      final ObserverContext<MasterCoprocessorEnvironment> c,
+      final TableDescriptor desc,
+      final RegionInfo[] regions)
+      throws IOException {
+    LOG.info("postCompletedCreateTableAction...");
+  }
 }
