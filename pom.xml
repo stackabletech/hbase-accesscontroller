@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>tech.stackable</groupId>
   <artifactId>hbase-opa-authorizer</artifactId>
   <version>0.1.0</version>
+  <packaging>jar</packaging>
 
   <name>Apache Hadoop HBase OPA Authorizer</name>
   <url>https://github.com/stackabletech/hbase-opa-authorizer/</url>
@@ -56,34 +58,48 @@
 
   <dependencies>
     <dependency>
-        <groupId>com.google.protobuf</groupId>
-        <artifactId>protobuf-java</artifactId>
-        <version>${hbase.protobuf.version}</version>
-        <scope>provided</scope>
+      <groupId>com.google.protobuf</groupId>
+      <artifactId>protobuf-java</artifactId>
+      <version>${hbase.protobuf.version}</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
-        <groupId>org.apache.hbase</groupId>
-        <artifactId>hbase-client</artifactId>
-        <version>${hbase.version}</version>
-        <scope>provided</scope>
-        <exclusions>
-            <exclusion>
-                <artifactId>maven-release-plugin</artifactId>
-                <groupId>org.apache.maven.plugins</groupId>
-            </exclusion>
-        </exclusions>
+      <groupId>org.apache.hbase</groupId>
+      <artifactId>hbase-client</artifactId>
+      <version>${hbase.version}</version>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <artifactId>maven-release-plugin</artifactId>
+          <groupId>org.apache.maven.plugins</groupId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
-        <groupId>org.apache.hbase</groupId>
-        <artifactId>hbase-server</artifactId>
-        <version>${hbase.version}</version>
-        <scope>provided</scope>
-        <exclusions>
-            <exclusion>
-                <artifactId>maven-release-plugin</artifactId>
-                <groupId>org.apache.maven.plugins</groupId>
-            </exclusion>
-        </exclusions>
+      <groupId>org.apache.hbase</groupId>
+      <artifactId>hbase-server</artifactId>
+      <version>${hbase.version}</version>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <artifactId>maven-release-plugin</artifactId>
+          <groupId>org.apache.maven.plugins</groupId>
+        </exclusion>
+        <exclusion>
+          <artifactId>org.glassfish.web</artifactId>
+          <groupId>javax.servlet.jsp</groupId>
+        </exclusion>
+        <exclusion>
+          <artifactId>org.glassfish</artifactId>
+          <groupId>javax.el</groupId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.hbase</groupId>
+      <artifactId>hbase-testing-util</artifactId>
+      <version>${hbase.version}</version>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>
@@ -106,7 +122,7 @@
         <artifactId>maven-clean-plugin</artifactId>
         <version>${maven-clean-plugin.version}</version>
       </plugin>
-      <!--plugin>
+      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
         <version>${maven-compiler-plugin.version}</version>
@@ -123,7 +139,7 @@
             </path>
           </annotationProcessorPaths>
         </configuration>
-      </plugin-->
+      </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-deploy-plugin</artifactId>
@@ -137,16 +153,21 @@
         <configuration>
           <rules>
             <banDuplicatePomDependencyVersions/>
-            <!--banDynamicVersions/-->
+            <bannedDependencies>
+                  <excludes>
+                    <exclude>org.glassfish.jersey.containers:**</exclude>
+                    <exclude>org.glassfish.jersey.core:**</exclude>
+                  </excludes>
+                  <searchTransitive>false</searchTransitive>
+            </bannedDependencies>
             <banDuplicatePomDependencyVersions/>
-            <!--banDynamicVersions/-->
             <requireJavaVersion>
               <version>${java.version}</version>
             </requireJavaVersion>
             <requireMavenVersion>
               <version>3.3.9</version>
             </requireMavenVersion>
-            <!--requirePluginVersions/-->
+            <requirePluginVersions/>
           </rules>
         </configuration>
         <executions>
@@ -222,15 +243,6 @@
             </includes>
             <jackson/>
           </json>
-          <!--
-           POM rewriting conflicts with the maven-release-plugin.
-           The release plugin rewrites the POM file in a way that is incompatible with spotless, and they change
-           the contents back and forth to match their respective styles. -->
-          <!--pom>
-            <sortPom>
-              <expandEmptyElements>false</expandEmptyElements>
-            </sortPom>
-          </pom-->
         </configuration>
         <executions>
           <execution>
