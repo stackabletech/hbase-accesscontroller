@@ -9,7 +9,6 @@ import org.apache.hadoop.hbase.client.*;
 import org.apache.hadoop.hbase.coprocessor.*;
 import org.apache.hadoop.hbase.protobuf.generated.AccessControlProtos;
 import org.apache.hadoop.hbase.regionserver.*;
-import org.apache.hadoop.hbase.security.AccessDeniedException;
 import org.apache.hadoop.hbase.security.User;
 import org.apache.hadoop.hbase.security.UserProvider;
 import org.apache.hadoop.hbase.security.access.*;
@@ -101,14 +100,12 @@ public class OpenPolicyAgentAccessController
       ObserverContext<RegionCoprocessorEnvironment> c, Put put, WALEdit edit, Durability durability)
       throws IOException {
     LOG.info("prePut1...");
-    throw new AccessDeniedException("Insufficient permissions!");
   }
 
   @Override
   public void prePut(ObserverContext<RegionCoprocessorEnvironment> c, Put put, WALEdit edit)
       throws IOException {
     LOG.info("prePut2...");
-    throw new AccessDeniedException("Insufficient permissions!");
   }
 
   @Override
@@ -125,5 +122,42 @@ public class OpenPolicyAgentAccessController
       final RegionInfo[] regions)
       throws IOException {
     LOG.info("postCompletedCreateTableAction...");
+  }
+
+  @Override
+  public void preExecuteProcedures(ObserverContext<RegionServerCoprocessorEnvironment> ctx)
+      throws IOException {
+    LOG.info("preExecuteProcedures...");
+  }
+
+  @Override
+  public void preOpen(ObserverContext<RegionCoprocessorEnvironment> c) throws IOException {
+    LOG.info("preOpen...");
+  }
+
+  /*********************************** Observer/Service Getters ***********************************/
+  @Override
+  public Optional<RegionObserver> getRegionObserver() {
+    return Optional.of(this);
+  }
+
+  @Override
+  public Optional<MasterObserver> getMasterObserver() {
+    return Optional.of(this);
+  }
+
+  @Override
+  public Optional<EndpointObserver> getEndpointObserver() {
+    return Optional.of(this);
+  }
+
+  @Override
+  public Optional<BulkLoadObserver> getBulkLoadObserver() {
+    return Optional.of(this);
+  }
+
+  @Override
+  public Optional<RegionServerObserver> getRegionServerObserver() {
+    return Optional.of(this);
   }
 }
