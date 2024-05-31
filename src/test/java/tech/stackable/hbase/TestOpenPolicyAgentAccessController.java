@@ -23,7 +23,6 @@ import org.apache.hadoop.hbase.security.User;
 import org.apache.hadoop.hbase.security.access.*;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.security.UserGroupInformation;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,7 +59,7 @@ public class TestOpenPolicyAgentAccessController {
   private static TableName TEST_TABLE = TableName.valueOf("testtable1");
 
   @Test
-  @Ignore
+  // @Ignore
   public void testOpenPolicyAgentAccessController() throws Exception {
     LOG.info("testOpenPolicyAgentAccessController - start");
 
@@ -90,25 +89,39 @@ public class TestOpenPolicyAgentAccessController {
         OpenPolicyAgentAccessController.class.getName());
 
     conf.setInt(HFile.FORMAT_VERSION_KEY, 3);
-    conf.set(User.HBASE_SECURITY_AUTHORIZATION_CONF_KEY, "false");
+    conf.set(User.HBASE_SECURITY_AUTHORIZATION_CONF_KEY, "true");
     conf.setBoolean(AccessControlConstants.EXEC_PERMISSION_CHECKS_KEY, true);
+    configureSuperuser(conf);
 
     TEST_UTIL.startMiniCluster();
     MasterCoprocessorHost masterCpHost =
         TEST_UTIL.getMiniHBaseCluster().getMaster().getMasterCoprocessorHost();
-
     masterCpHost.load(OpenPolicyAgentAccessController.class, Coprocessor.PRIORITY_HIGHEST, conf);
+    ACCESS_CONTROLLER = masterCpHost.findCoprocessor(OpenPolicyAgentAccessController.class);
 
+    TEST_UTIL.waitUntilAllRegionsAssigned(PermissionStorage.ACL_TABLE_NAME);
+
+    SUPERUSER = User.createUserForTesting(conf, "admin", new String[] {"supergroup"});
+    USER_ADMIN = User.createUserForTesting(conf, "admin2", new String[0]);
+    USER_RW = User.createUserForTesting(conf, "rwuser", new String[0]);
+    USER_RO = User.createUserForTesting(conf, "rouser", new String[0]);
     USER_OWNER = User.createUserForTesting(conf, "owner", new String[0]);
+    USER_CREATE = User.createUserForTesting(conf, "tbl_create", new String[0]);
+    USER_NONE = User.createUserForTesting(conf, "nouser", new String[0]);
+    USER_ADMIN_CF = User.createUserForTesting(conf, "col_family_admin", new String[0]);
 
-    HTableDescriptor htd = new HTableDescriptor(TEST_TABLE);
-    HColumnDescriptor hcd = new HColumnDescriptor(TEST_FAMILY);
-    hcd.setMaxVersions(100);
-    htd.addFamily(hcd);
-    htd.setOwner(USER_OWNER);
-    createTable(TEST_UTIL, TEST_UTIL.getAdmin(), htd, new byte[][] {Bytes.toBytes("s")});
+    USER_GROUP_ADMIN =
+        User.createUserForTesting(conf, "user_group_admin", new String[] {GROUP_ADMIN});
+    USER_GROUP_CREATE =
+        User.createUserForTesting(conf, "user_group_create", new String[] {GROUP_CREATE});
+    USER_GROUP_READ = User.createUserForTesting(conf, "user_group_read", new String[] {GROUP_READ});
+    USER_GROUP_WRITE =
+        User.createUserForTesting(conf, "user_group_write", new String[] {GROUP_WRITE});
 
-    TEST_UTIL.shutdownMiniCluster();
+    systemUserConnection = TEST_UTIL.getConnection();
+    setUpTableAndUserPermissions();
+
+    tearDownAfterClass();
     LOG.info("testOpenPolicyAgentAccessController - complete");
   }
 
