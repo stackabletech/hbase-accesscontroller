@@ -33,7 +33,7 @@ public class TestOpenPolicyAgentAccessController {
   protected static final HBaseTestingUtility TEST_UTIL = new HBaseTestingUtility();
   private static Configuration conf;
   private static Connection systemUserConnection;
-  private static AccessController ACCESS_CONTROLLER;
+  private static RegionCoprocessor ACCESS_CONTROLLER;
 
   private static User SUPERUSER;
   private static User USER_ADMIN;
@@ -63,69 +63,13 @@ public class TestOpenPolicyAgentAccessController {
   public void testOpenPolicyAgentAccessController() throws Exception {
     LOG.info("testOpenPolicyAgentAccessController - start");
 
-    conf = TEST_UTIL.getConfiguration();
-    conf.setInt(HConstants.REGION_SERVER_HIGH_PRIORITY_HANDLER_COUNT, 10);
-
-    conf.set(
-        CommonConfigurationKeys.HADOOP_SECURITY_GROUP_MAPPING,
-        TestAccessController.MyShellBasedUnixGroupsMapping.class.getName());
-
-    UserGroupInformation.setConfiguration(conf);
-
-    conf.set(
-        CommonConfigurationKeys.HADOOP_SECURITY_GROUP_MAPPING,
-        TestAccessController.MyShellBasedUnixGroupsMapping.class.getName());
-
-    conf.set("hadoop.security.authorization", "false");
-    conf.set("hadoop.security.authentication", "simple");
-    conf.set(
-        CoprocessorHost.MASTER_COPROCESSOR_CONF_KEY,
-        OpenPolicyAgentAccessController.class.getName() + "," + MasterSyncObserver.class.getName());
-    conf.set(
-        CoprocessorHost.REGION_COPROCESSOR_CONF_KEY,
-        OpenPolicyAgentAccessController.class.getName());
-    conf.set(
-        CoprocessorHost.REGIONSERVER_COPROCESSOR_CONF_KEY,
-        OpenPolicyAgentAccessController.class.getName());
-
-    conf.setInt(HFile.FORMAT_VERSION_KEY, 3);
-    conf.set(User.HBASE_SECURITY_AUTHORIZATION_CONF_KEY, "true");
-    conf.setBoolean(AccessControlConstants.EXEC_PERMISSION_CHECKS_KEY, true);
-    configureSuperuser(conf);
-
-    TEST_UTIL.startMiniCluster();
-    MasterCoprocessorHost masterCpHost =
-        TEST_UTIL.getMiniHBaseCluster().getMaster().getMasterCoprocessorHost();
-    masterCpHost.load(OpenPolicyAgentAccessController.class, Coprocessor.PRIORITY_HIGHEST, conf);
-    ACCESS_CONTROLLER = masterCpHost.findCoprocessor(OpenPolicyAgentAccessController.class);
-
-    TEST_UTIL.waitUntilAllRegionsAssigned(PermissionStorage.ACL_TABLE_NAME);
-
-    SUPERUSER = User.createUserForTesting(conf, "admin", new String[] {"supergroup"});
-    USER_ADMIN = User.createUserForTesting(conf, "admin2", new String[0]);
-    USER_RW = User.createUserForTesting(conf, "rwuser", new String[0]);
-    USER_RO = User.createUserForTesting(conf, "rouser", new String[0]);
-    USER_OWNER = User.createUserForTesting(conf, "owner", new String[0]);
-    USER_CREATE = User.createUserForTesting(conf, "tbl_create", new String[0]);
-    USER_NONE = User.createUserForTesting(conf, "nouser", new String[0]);
-    USER_ADMIN_CF = User.createUserForTesting(conf, "col_family_admin", new String[0]);
-
-    USER_GROUP_ADMIN =
-        User.createUserForTesting(conf, "user_group_admin", new String[] {GROUP_ADMIN});
-    USER_GROUP_CREATE =
-        User.createUserForTesting(conf, "user_group_create", new String[] {GROUP_CREATE});
-    USER_GROUP_READ = User.createUserForTesting(conf, "user_group_read", new String[] {GROUP_READ});
-    USER_GROUP_WRITE =
-        User.createUserForTesting(conf, "user_group_write", new String[] {GROUP_WRITE});
-
-    systemUserConnection = TEST_UTIL.getConnection();
-    setUpTableAndUserPermissions();
-
+    setupBeforeClass(OpenPolicyAgentAccessController.class);
     tearDownAfterClass();
+
     LOG.info("testOpenPolicyAgentAccessController - complete");
   }
 
-  private static void setupBeforeClass() throws Exception {
+  private static void setupBeforeClass(Class accessControllerClass) throws Exception {
     conf = TEST_UTIL.getConfiguration();
     conf.setInt(HConstants.REGION_SERVER_HIGH_PRIORITY_HANDLER_COUNT, 10);
 
@@ -143,9 +87,9 @@ public class TestOpenPolicyAgentAccessController {
     conf.set("hadoop.security.authentication", "simple");
     conf.set(
         CoprocessorHost.MASTER_COPROCESSOR_CONF_KEY,
-        AccessController.class.getName() + "," + MasterSyncObserver.class.getName());
-    conf.set(CoprocessorHost.REGION_COPROCESSOR_CONF_KEY, AccessController.class.getName());
-    conf.set(CoprocessorHost.REGIONSERVER_COPROCESSOR_CONF_KEY, AccessController.class.getName());
+        accessControllerClass.getName() + "," + MasterSyncObserver.class.getName());
+    conf.set(CoprocessorHost.REGION_COPROCESSOR_CONF_KEY, accessControllerClass.getName());
+    conf.set(CoprocessorHost.REGIONSERVER_COPROCESSOR_CONF_KEY, accessControllerClass.getName());
 
     conf.setInt(HFile.FORMAT_VERSION_KEY, 3);
     conf.set(User.HBASE_SECURITY_AUTHORIZATION_CONF_KEY, "true");
@@ -155,8 +99,8 @@ public class TestOpenPolicyAgentAccessController {
     TEST_UTIL.startMiniCluster();
     MasterCoprocessorHost masterCpHost =
         TEST_UTIL.getMiniHBaseCluster().getMaster().getMasterCoprocessorHost();
-    masterCpHost.load(AccessController.class, Coprocessor.PRIORITY_HIGHEST, conf);
-    ACCESS_CONTROLLER = masterCpHost.findCoprocessor(AccessController.class);
+    masterCpHost.load(accessControllerClass, Coprocessor.PRIORITY_HIGHEST, conf);
+    ACCESS_CONTROLLER = (RegionCoprocessor) masterCpHost.findCoprocessor(accessControllerClass);
 
     TEST_UTIL.waitUntilAllRegionsAssigned(PermissionStorage.ACL_TABLE_NAME);
 
@@ -275,7 +219,7 @@ public class TestOpenPolicyAgentAccessController {
 
   @Test
   public void testGetUserPermissions() throws Throwable {
-    setupBeforeClass();
+    setupBeforeClass(AccessController.class);
 
     Connection conn = null;
     try {
@@ -451,7 +395,7 @@ public class TestOpenPolicyAgentAccessController {
 
   @Test
   public void testHasPermission() throws Throwable {
-    setupBeforeClass();
+    setupBeforeClass(AccessController.class);
 
     Connection conn = null;
     try {

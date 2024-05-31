@@ -1265,6 +1265,7 @@ public class OpenPolicyAgentAccessController extends AccessController {
   }
 
   // TODO replace with user that returns thw whole name for getShortName()
+  // this could have been overridden it if was not private
   private User getActiveUser(ObserverContext<?> ctx) throws IOException {
     // for non-rpc handling, fallback to system user
     Optional<User> optionalUser = ctx.getCaller();

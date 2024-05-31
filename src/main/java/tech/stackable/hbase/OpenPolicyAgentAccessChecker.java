@@ -51,6 +51,7 @@ public class OpenPolicyAgentAccessChecker extends AccessChecker {
   }
 
   // TODO: implement opa calls and shortUser as being fully-qualified name
+  // this could have been overridden if the method was not static.
   public static List<String> getOpaUserGroups(String user) {
     return List.of();
   }
