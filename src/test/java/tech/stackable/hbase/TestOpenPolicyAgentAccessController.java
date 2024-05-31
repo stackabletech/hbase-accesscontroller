@@ -23,8 +23,7 @@ import org.apache.hadoop.hbase.security.User;
 import org.apache.hadoop.hbase.security.access.*;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.security.UserGroupInformation;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,62 +59,60 @@ public class TestOpenPolicyAgentAccessController {
   private static byte[] TEST_QUALIFIER = Bytes.toBytes("q1");
   private static TableName TEST_TABLE = TableName.valueOf("testtable1");
 
-  // @Test
-  //  public void testOpenPolicyAgentAccessController() throws Exception {
-  //    LOG.info("testOpenPolicyAgentAccessController - start");
-  //
-  //    conf = TEST_UTIL.getConfiguration();
-  //    conf.setInt(HConstants.REGION_SERVER_HIGH_PRIORITY_HANDLER_COUNT, 10);
-  //
-  //    conf.set(
-  //        CommonConfigurationKeys.HADOOP_SECURITY_GROUP_MAPPING,
-  //        TestAccessController.MyShellBasedUnixGroupsMapping.class.getName());
-  //
-  //    UserGroupInformation.setConfiguration(conf);
-  //
-  //    conf.set(
-  //        CommonConfigurationKeys.HADOOP_SECURITY_GROUP_MAPPING,
-  //        TestAccessController.MyShellBasedUnixGroupsMapping.class.getName());
-  //
-  //    conf.set("hadoop.security.authorization", "false");
-  //    conf.set("hadoop.security.authentication", "simple");
-  //    conf.set(
-  //        CoprocessorHost.MASTER_COPROCESSOR_CONF_KEY,
-  //        OpenPolicyAgentAccessController.class.getName() + "," +
-  // MasterSyncObserver.class.getName());
-  //    conf.set(
-  //        CoprocessorHost.REGION_COPROCESSOR_CONF_KEY,
-  //        OpenPolicyAgentAccessController.class.getName());
-  //    conf.set(
-  //        CoprocessorHost.REGIONSERVER_COPROCESSOR_CONF_KEY,
-  //        OpenPolicyAgentAccessController.class.getName());
-  //
-  //    conf.setInt(HFile.FORMAT_VERSION_KEY, 3);
-  //    conf.set(User.HBASE_SECURITY_AUTHORIZATION_CONF_KEY, "false");
-  //    conf.setBoolean(AccessControlConstants.EXEC_PERMISSION_CHECKS_KEY, true);
-  //
-  //    TEST_UTIL.startMiniCluster();
-  //    MasterCoprocessorHost masterCpHost =
-  //        TEST_UTIL.getMiniHBaseCluster().getMaster().getMasterCoprocessorHost();
-  //
-  //    masterCpHost.load(OpenPolicyAgentAccessController.class, Coprocessor.PRIORITY_HIGHEST,
-  // conf);
-  //
-  //    USER_OWNER = User.createUserForTesting(conf, "owner", new String[0]);
-  //
-  //    HTableDescriptor htd = new HTableDescriptor(TEST_TABLE);
-  //    HColumnDescriptor hcd = new HColumnDescriptor(TEST_FAMILY);
-  //    hcd.setMaxVersions(100);
-  //    htd.addFamily(hcd);
-  //    htd.setOwner(USER_OWNER);
-  //    createTable(TEST_UTIL, TEST_UTIL.getAdmin(), htd, new byte[][] {Bytes.toBytes("s")});
-  //
-  //    TEST_UTIL.shutdownMiniCluster();
-  //    LOG.info("testOpenPolicyAgentAccessController - complete");
-  //  }
+  @Test
+  @Ignore
+  public void testOpenPolicyAgentAccessController() throws Exception {
+    LOG.info("testOpenPolicyAgentAccessController - start");
 
-  @BeforeClass
-  public static void setupBeforeClass() throws Exception {
+    conf = TEST_UTIL.getConfiguration();
+    conf.setInt(HConstants.REGION_SERVER_HIGH_PRIORITY_HANDLER_COUNT, 10);
+
+    conf.set(
+        CommonConfigurationKeys.HADOOP_SECURITY_GROUP_MAPPING,
+        TestAccessController.MyShellBasedUnixGroupsMapping.class.getName());
+
+    UserGroupInformation.setConfiguration(conf);
+
+    conf.set(
+        CommonConfigurationKeys.HADOOP_SECURITY_GROUP_MAPPING,
+        TestAccessController.MyShellBasedUnixGroupsMapping.class.getName());
+
+    conf.set("hadoop.security.authorization", "false");
+    conf.set("hadoop.security.authentication", "simple");
+    conf.set(
+        CoprocessorHost.MASTER_COPROCESSOR_CONF_KEY,
+        OpenPolicyAgentAccessController.class.getName() + "," + MasterSyncObserver.class.getName());
+    conf.set(
+        CoprocessorHost.REGION_COPROCESSOR_CONF_KEY,
+        OpenPolicyAgentAccessController.class.getName());
+    conf.set(
+        CoprocessorHost.REGIONSERVER_COPROCESSOR_CONF_KEY,
+        OpenPolicyAgentAccessController.class.getName());
+
+    conf.setInt(HFile.FORMAT_VERSION_KEY, 3);
+    conf.set(User.HBASE_SECURITY_AUTHORIZATION_CONF_KEY, "false");
+    conf.setBoolean(AccessControlConstants.EXEC_PERMISSION_CHECKS_KEY, true);
+
+    TEST_UTIL.startMiniCluster();
+    MasterCoprocessorHost masterCpHost =
+        TEST_UTIL.getMiniHBaseCluster().getMaster().getMasterCoprocessorHost();
+
+    masterCpHost.load(OpenPolicyAgentAccessController.class, Coprocessor.PRIORITY_HIGHEST, conf);
+
+    USER_OWNER = User.createUserForTesting(conf, "owner", new String[0]);
+
+    HTableDescriptor htd = new HTableDescriptor(TEST_TABLE);
+    HColumnDescriptor hcd = new HColumnDescriptor(TEST_FAMILY);
+    hcd.setMaxVersions(100);
+    htd.addFamily(hcd);
+    htd.setOwner(USER_OWNER);
+    createTable(TEST_UTIL, TEST_UTIL.getAdmin(), htd, new byte[][] {Bytes.toBytes("s")});
+
+    TEST_UTIL.shutdownMiniCluster();
+    LOG.info("testOpenPolicyAgentAccessController - complete");
+  }
+
+  private static void setupBeforeClass() throws Exception {
     conf = TEST_UTIL.getConfiguration();
     conf.setInt(HConstants.REGION_SERVER_HIGH_PRIORITY_HANDLER_COUNT, 10);
 
@@ -243,8 +240,7 @@ public class TestOpenPolicyAgentAccessController {
     assertEquals(5, size);
   }
 
-  @AfterClass
-  public static void tearDownAfterClass() throws Exception {
+  private static void tearDownAfterClass() throws Exception {
     cleanUp();
     TEST_UTIL.shutdownMiniCluster();
   }
@@ -266,6 +262,8 @@ public class TestOpenPolicyAgentAccessController {
 
   @Test
   public void testGetUserPermissions() throws Throwable {
+    setupBeforeClass();
+
     Connection conn = null;
     try {
       conn = ConnectionFactory.createConnection(conf);
@@ -434,10 +432,14 @@ public class TestOpenPolicyAgentAccessController {
         conn.close();
       }
     }
+
+    tearDownAfterClass();
   }
 
   @Test
   public void testHasPermission() throws Throwable {
+    setupBeforeClass();
+
     Connection conn = null;
     try {
       conn = ConnectionFactory.createConnection(conf);
@@ -733,6 +735,7 @@ public class TestOpenPolicyAgentAccessController {
         conn.close();
       }
     }
+    tearDownAfterClass();
   }
 
   private void validateTableACLForGetUserPermissions(
