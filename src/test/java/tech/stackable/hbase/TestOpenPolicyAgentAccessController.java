@@ -1,29 +1,36 @@
 package tech.stackable.hbase;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.apache.hadoop.hbase.AuthUtil.toGroupEntry;
 import static org.apache.hadoop.hbase.security.access.SecureTestUtil.*;
 import static org.junit.Assert.*;
 
+import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.google.protobuf.BlockingRpcChannel;
 import java.util.Arrays;
 import java.util.Collection;
 import org.apache.hadoop.hbase.*;
 import org.apache.hadoop.hbase.client.*;
-import org.apache.hadoop.hbase.coprocessor.*;
 import org.apache.hadoop.hbase.protobuf.generated.AccessControlProtos;
 import org.apache.hadoop.hbase.security.Superusers;
 import org.apache.hadoop.hbase.security.User;
 import org.apache.hadoop.hbase.security.access.*;
 import org.apache.hadoop.hbase.util.Bytes;
+import org.junit.Rule;
 import org.junit.Test;
 
 public class TestOpenPolicyAgentAccessController extends TestUtils {
+  public static final String OPA_URL = "http://localhost:8089";
+
+  @Rule public WireMockRule wireMockRule = new WireMockRule(8089);
 
   @Test
-  public void testOpenPolicyAgentAccessController() throws Exception {
+  public void testOpenPolicyAgentAccessControllerPrePut() throws Exception {
     LOG.info("testOpenPolicyAgentAccessController - start");
 
-    setup(OpenPolicyAgentAccessController.class, false);
+    stubFor(post("/").willReturn(ok().withBody("{\"result\": \"true\"}")));
+
+    setup(OpenPolicyAgentAccessController.class, false, OPA_URL);
 
     HTableDescriptor htd = new HTableDescriptor(TEST_TABLE);
     HColumnDescriptor hcd = new HColumnDescriptor(TEST_FAMILY);
@@ -39,8 +46,8 @@ public class TestOpenPolicyAgentAccessController extends TestUtils {
   }
 
   @Test
-  public void testGetUserPermissions() throws Throwable {
-    setup(AccessController.class, true);
+  public void testDefaultAccessControllerGetUserPermissions() throws Throwable {
+    setup(AccessController.class, true, null);
     setUpTables();
 
     Connection conn = null;
@@ -216,8 +223,8 @@ public class TestOpenPolicyAgentAccessController extends TestUtils {
   }
 
   @Test
-  public void testHasPermission() throws Throwable {
-    setup(AccessController.class, true);
+  public void testDefaultAccessControllerHasPermission() throws Throwable {
+    setup(AccessController.class, true, null);
     setUpTables();
 
     Connection conn = null;

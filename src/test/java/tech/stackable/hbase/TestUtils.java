@@ -4,6 +4,7 @@ import static org.apache.hadoop.hbase.AuthUtil.toGroupEntry;
 import static org.apache.hadoop.hbase.security.access.SecureTestUtil.*;
 import static org.junit.Assert.*;
 
+import com.google.common.base.Strings;
 import java.util.Collection;
 import java.util.List;
 import org.apache.hadoop.conf.Configuration;
@@ -55,14 +56,17 @@ public class TestUtils {
   protected static User USER_GROUP_READ;
   protected static User USER_GROUP_WRITE;
 
-  protected static void setup(Class accessControllerClass, boolean usesAclTable) throws Exception {
+  protected static void setup(Class accessControllerClass, boolean usesAclTable, String opaUrl)
+      throws Exception {
     conf = TEST_UTIL.getConfiguration();
     conf.setInt(HConstants.REGION_SERVER_HIGH_PRIORITY_HANDLER_COUNT, 10);
 
     // default is 10s which is difficult when step-through debugging
     conf.setInt(HConstants.HBASE_RPC_SHORTOPERATION_TIMEOUT_KEY, 600000);
 
-    conf.set(OpenPolicyAgentAccessController.OPA_POLICY_URL_PROP, "http://does.not.exist.com");
+    if (!Strings.isNullOrEmpty(opaUrl)) {
+      conf.set(OpenPolicyAgentAccessController.OPA_POLICY_URL_PROP, opaUrl);
+    }
 
     conf.set(
         CommonConfigurationKeys.HADOOP_SECURITY_GROUP_MAPPING,

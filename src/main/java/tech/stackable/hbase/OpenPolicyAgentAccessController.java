@@ -2,6 +2,7 @@ package tech.stackable.hbase;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -10,6 +11,8 @@ import com.google.protobuf.RpcController;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.*;
 import org.apache.hadoop.hbase.*;
 import org.apache.hadoop.hbase.client.*;
@@ -19,7 +22,9 @@ import org.apache.hadoop.hbase.protobuf.generated.AccessControlProtos;
 import org.apache.hadoop.hbase.security.User;
 import org.apache.hadoop.hbase.security.UserProvider;
 import org.apache.hadoop.hbase.security.access.*;
+import org.apache.hadoop.hbase.security.access.Permission.Action;
 import org.apache.hadoop.hbase.wal.WALEdit;
+import org.apache.hadoop.security.AccessControlException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -100,6 +105,70 @@ public class OpenPolicyAgentAccessController
     return userProvider.getCurrent();
   }
 
+  private void checkPermissionInfo(User user, TableName table, Action action)
+      throws AccessControlException {
+    OpaAllowQuery query =
+        new OpaAllowQuery(new OpaAllowQuery.OpaAllowQueryInput(user.getUGI(), table, action));
+
+    String body;
+    try {
+      body = json.writeValueAsString(query);
+    } catch (JsonProcessingException e) {
+      throw new OpaException.SerializeFailed(e);
+    }
+
+    String prettyPrinted;
+    try {
+      prettyPrinted = json.writerWithDefaultPrettyPrinter().writeValueAsString(query);
+    } catch (JsonProcessingException e) {
+      LOG.error(
+          "Could not pretty print the following request body (printing raw version instead): {}",
+          body);
+      throw new OpaException.SerializeFailed(e);
+    }
+
+    LOG.info("Request body:\n{}", prettyPrinted);
+    HttpResponse<String> response = null;
+    try {
+      response =
+          httpClient.send(
+              HttpRequest.newBuilder(opaUri)
+                  .header("Content-Type", "application/json")
+                  .POST(HttpRequest.BodyPublishers.ofString(body))
+                  .build(),
+              HttpResponse.BodyHandlers.ofString());
+      LOG.debug("Opa response: {}", response.body());
+    } catch (Exception e) {
+      LOG.error(e.getMessage());
+      throw new OpaException.QueryFailed(e);
+    }
+
+    switch (Objects.requireNonNull(response).statusCode()) {
+      case 200:
+        break;
+      case 404:
+        throw new OpaException.EndPointNotFound(opaUri.toString());
+      default:
+        throw new OpaException.OpaServerError(query.toString(), response);
+    }
+
+    OpaQueryResult result;
+    try {
+      result = json.readValue(response.body(), OpaQueryResult.class);
+    } catch (JsonProcessingException e) {
+      throw new OpaException.DeserializeFailed(e);
+    }
+
+    if (result.result == null || !result.result) {
+      throw new AccessControlException("OPA denied the request");
+    }
+  }
+
+  private static class OpaQueryResult {
+    // Boxed Boolean to detect not-present vs explicitly false
+    public Boolean result;
+  }
+
   @Override
   public void postCompletedCreateTableAction(
       final ObserverContext<MasterCoprocessorEnvironment> c,
@@ -117,6 +186,11 @@ public class OpenPolicyAgentAccessController
       throws IOException {
     User user = getActiveUser(c);
     LOG.info("prePut: start with [{}]", user);
+
+    if (authorizationEnabled) {
+      checkPermissionInfo(
+          user, c.getEnvironment().getRegion().getRegionInfo().getTable(), Action.WRITE);
+    }
   }
 
   @Override
