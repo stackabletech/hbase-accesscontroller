@@ -47,7 +47,7 @@ public class TestAllowAccessController extends TestUtils {
     public void testAllowAccessController() throws Exception {
         LOG.info("testAllowAccessController - start");
 
-        setup(OpenPolicyAgentAccessController.class, false);
+        setup(AllowAccessController.class, false);
         tearDown();
 
         LOG.info("testAllowAccessController - complete");
