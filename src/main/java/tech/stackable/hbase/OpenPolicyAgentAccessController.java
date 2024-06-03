@@ -27,6 +27,8 @@ import org.apache.hadoop.hbase.wal.WALEdit;
 import org.apache.hadoop.security.AccessControlException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import tech.stackable.hbase.opa.OpaAllowQuery;
+import tech.stackable.hbase.opa.OpaException;
 
 public class OpenPolicyAgentAccessController
     implements MasterCoprocessor,

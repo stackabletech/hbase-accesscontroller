@@ -1,4 +1,4 @@
-package tech.stackable.hbase;
+package tech.stackable.hbase.opa;
 
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.security.access.Permission;

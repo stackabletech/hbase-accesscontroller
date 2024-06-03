@@ -1,4 +1,4 @@
-package tech.stackable.hbase;
+package tech.stackable.hbase.opa;
 
 import java.io.IOException;
 import java.util.List;

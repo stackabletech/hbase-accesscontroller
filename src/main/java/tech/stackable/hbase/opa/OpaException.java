@@ -1,7 +1,8 @@
-package tech.stackable.hbase;
+package tech.stackable.hbase.opa;
 
 import java.net.URI;
 import java.net.http.HttpResponse;
+import tech.stackable.hbase.OpenPolicyAgentAccessController;
 
 public abstract class OpaException extends RuntimeException {
 
