@@ -18,6 +18,7 @@ import org.apache.hadoop.hbase.master.MasterCoprocessorHost;
 import org.apache.hadoop.hbase.protobuf.generated.AccessControlProtos;
 import org.apache.hadoop.hbase.regionserver.HRegion;
 import org.apache.hadoop.hbase.regionserver.RegionCoprocessorHost;
+import org.apache.hadoop.hbase.regionserver.RegionServerCoprocessorHost;
 import org.apache.hadoop.hbase.security.Superusers;
 import org.apache.hadoop.hbase.security.User;
 import org.apache.hadoop.hbase.security.access.*;
@@ -73,6 +74,9 @@ public class TestOpenPolicyAgentAccessController {
     conf = TEST_UTIL.getConfiguration();
     conf.setInt(HConstants.REGION_SERVER_HIGH_PRIORITY_HANDLER_COUNT, 10);
 
+    // default is 10s which is difficult when step-through debugging
+    conf.setInt(HConstants.HBASE_RPC_SHORTOPERATION_TIMEOUT_KEY, 600000);
+
     conf.set(
         CommonConfigurationKeys.HADOOP_SECURITY_GROUP_MAPPING,
         TestAccessController.MyShellBasedUnixGroupsMapping.class.getName());
@@ -102,6 +106,19 @@ public class TestOpenPolicyAgentAccessController {
     masterCpHost.load(accessControllerClass, Coprocessor.PRIORITY_HIGHEST, conf);
     ACCESS_CONTROLLER = (RegionCoprocessor) masterCpHost.findCoprocessor(accessControllerClass);
 
+    for (int i = 0; i < TEST_UTIL.getMiniHBaseCluster().getNumLiveRegionServers(); i++) {
+      RegionServerCoprocessorHost regionCpHost =
+          TEST_UTIL.getMiniHBaseCluster().getRegionServer(i).getRegionServerCoprocessorHost();
+      regionCpHost.load(accessControllerClass, Coprocessor.PRIORITY_HIGHEST, conf);
+    }
+    ACCESS_CONTROLLER =
+        (RegionCoprocessor)
+            TEST_UTIL
+                .getMiniHBaseCluster()
+                .getRegionServer(0)
+                .getRegionServerCoprocessorHost()
+                .findCoprocessor(accessControllerClass);
+
     TEST_UTIL.waitUntilAllRegionsAssigned(PermissionStorage.ACL_TABLE_NAME);
 
     SUPERUSER = User.createUserForTesting(conf, "admin", new String[] {"supergroup"});
@@ -122,7 +139,6 @@ public class TestOpenPolicyAgentAccessController {
         User.createUserForTesting(conf, "user_group_write", new String[] {GROUP_WRITE});
 
     systemUserConnection = TEST_UTIL.getConnection();
-    setUpTableAndUserPermissions();
   }
 
   private static void setUpTableAndUserPermissions() throws Exception {
@@ -220,6 +236,7 @@ public class TestOpenPolicyAgentAccessController {
   @Test
   public void testGetUserPermissions() throws Throwable {
     setupBeforeClass(AccessController.class);
+    setUpTableAndUserPermissions();
 
     Connection conn = null;
     try {
@@ -396,6 +413,7 @@ public class TestOpenPolicyAgentAccessController {
   @Test
   public void testHasPermission() throws Throwable {
     setupBeforeClass(AccessController.class);
+    setUpTableAndUserPermissions();
 
     Connection conn = null;
     try {
