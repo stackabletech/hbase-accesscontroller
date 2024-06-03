@@ -24,8 +24,17 @@ public class TestOpenPolicyAgentAccessController extends TestUtils {
     LOG.info("testOpenPolicyAgentAccessController - start");
 
     setup(OpenPolicyAgentAccessController.class, false);
-    tearDown();
 
+    HTableDescriptor htd = new HTableDescriptor(TEST_TABLE);
+    HColumnDescriptor hcd = new HColumnDescriptor(TEST_FAMILY);
+    hcd.setMaxVersions(100);
+    htd.addFamily(hcd);
+    htd.setOwner(USER_OWNER);
+
+    createTable(TEST_UTIL, TEST_UTIL.getAdmin(), htd, new byte[][] {Bytes.toBytes("s")});
+    deleteTable(TEST_UTIL, TEST_TABLE);
+
+    tearDown();
     LOG.info("testOpenPolicyAgentAccessController - complete");
   }
 
