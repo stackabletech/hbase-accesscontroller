@@ -1,54 +1,68 @@
 package tech.stackable.hbase;
 
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.hbase.HBaseTestingUtility;
-import org.apache.hadoop.hbase.TableName;
+import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.client.Connection;
-import org.apache.hadoop.hbase.coprocessor.RegionCoprocessor;
-import org.apache.hadoop.hbase.security.User;
+import org.apache.hadoop.hbase.client.ConnectionFactory;
+import org.apache.hadoop.hbase.security.access.AccessControlClient;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 public class TestAllowAccessController extends TestUtils {
-  protected static final Logger LOG = LoggerFactory.getLogger(TestAllowAccessController.class);
-  protected static final HBaseTestingUtility TEST_UTIL = new HBaseTestingUtility();
-  private static Configuration conf;
-  private static Connection systemUserConnection;
-  private static RegionCoprocessor ACCESS_CONTROLLER;
 
-  private static User SUPERUSER;
-  private static User USER_ADMIN;
-  private static User USER_RW;
-  private static User USER_RO;
-  private static User USER_OWNER;
-  private static User USER_CREATE;
-  private static User USER_NONE;
-  private static User USER_ADMIN_CF;
+    private static byte[] TEST_FAMILY = Bytes.toBytes("f1");
 
-  private static final String GROUP_ADMIN = "group_admin";
-  private static final String GROUP_CREATE = "group_create";
-  private static final String GROUP_READ = "group_read";
-  private static final String GROUP_WRITE = "group_write";
+    @Test
+    public void testAllowAccessController() throws Exception {
+        LOG.info("testAllowAccessController - start");
 
-  private static User USER_GROUP_ADMIN;
-  private static User USER_GROUP_CREATE;
-  private static User USER_GROUP_READ;
-  private static User USER_GROUP_WRITE;
+        setup(AllowAccessController.class, false, "xxx");
+        tearDown();
 
-  private static byte[] TEST_FAMILY = Bytes.toBytes("f1");
-  private static byte[] TEST_QUALIFIER = Bytes.toBytes("q1");
-  private static TableName TEST_TABLE = TableName.valueOf("testtable1");
+        LOG.info("testAllowAccessController - complete");
+    }
 
-  @Test
-  // @Ignore
-  public void testAllowAccessController() throws Exception {
-    LOG.info("testAllowAccessController - start");
+    @Test
+    public void testGetUserPermissions() throws Throwable {
+         setup(AllowAccessController.class, false, "xxx");
 
-    setup(AllowAccessController.class, false, null);
-    tearDown();
+        Connection conn = null;
+        try {
+            conn = ConnectionFactory.createConnection(conf);
 
-    LOG.info("testAllowAccessController - complete");
-  }
+            try {
+                // test case with table name as null
+                assertEquals(3, AccessControlClient.getUserPermissions(conn, null, TEST_FAMILY).size());
+                fail("this should have thrown IllegalArgumentException");
+            } catch (IllegalArgumentException ex) {
+                // expected
+            }
+            try {
+                // test case with table name as emplty
+                assertEquals(
+                        3,
+                        AccessControlClient.getUserPermissions(conn, HConstants.EMPTY_STRING, TEST_FAMILY)
+                                .size());
+                fail("this should have thrown IllegalArgumentException");
+            } catch (IllegalArgumentException ex) {
+                // expected
+            }
+            try {
+                // test case with table name as namespace name
+                assertEquals(
+                        3, AccessControlClient.getUserPermissions(conn, "@xxx", TEST_FAMILY).size());
+                fail("this should have thrown IllegalArgumentException");
+            } catch (IllegalArgumentException ex) {
+                // expected
+            }
+        } finally {
+            if (conn != null) {
+                conn.close();
+            }
+        }
+        tearDown();
+    }
 }
+
