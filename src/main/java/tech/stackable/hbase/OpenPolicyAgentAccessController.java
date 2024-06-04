@@ -74,11 +74,26 @@ public class OpenPolicyAgentAccessController
   }
 
   @Override
+  public void preCreateTable(
+      ObserverContext<MasterCoprocessorEnvironment> c, TableDescriptor desc, RegionInfo[] regions)
+      throws IOException {
+    User user = getActiveUser(c);
+    LOG.info("preCreateTable: user [{}]", user);
+
+    opaAclChecker.checkPermissionInfo(user, desc.getTableName(), Action.WRITE);
+  }
+
+  @Override
   public void postCompletedCreateTableAction(
       final ObserverContext<MasterCoprocessorEnvironment> c,
       final TableDescriptor desc,
       final RegionInfo[] regions) {
-    LOG.info("postCompletedCreateTableAction: start");
+    /*
+    The default AccessController uses this method to check on the existence of the ACL table
+    and to switch from the current user to the real hbase master user for doing the RPC on the ACL table.
+    i.e. we do not need this if we are managing permissions in Opa.
+     */
+    LOG.info("postCompletedCreateTableAction: not implemented!");
   }
 
   @Override
@@ -89,7 +104,7 @@ public class OpenPolicyAgentAccessController
       final Durability durability)
       throws IOException {
     User user = getActiveUser(c);
-    LOG.info("prePut: start with [{}]", user);
+    LOG.info("prePut: user [{}]", user);
 
     opaAclChecker.checkPermissionInfo(
         user, c.getEnvironment().getRegion().getRegionInfo().getTable(), Action.WRITE);
@@ -103,14 +118,24 @@ public class OpenPolicyAgentAccessController
       final Durability durability)
       throws IOException {
     User user = getActiveUser(c);
-    LOG.info("preDelete: start with [{}]", user);
+    LOG.info("preDelete: user [{}]", user);
+
+    // the default access controller uses a second enum - OpType - to distinguish between
+    // different types of write action (e.g. write, delete)
+    opaAclChecker.checkPermissionInfo(
+        user, c.getEnvironment().getRegion().getRegionInfo().getTable(), Action.WRITE);
   }
 
   @Override
   public Result preAppend(ObserverContext<RegionCoprocessorEnvironment> c, Append append)
       throws IOException {
     User user = getActiveUser(c);
-    LOG.info("preAppend: start with [{}]", user);
+    LOG.info("preAppend: user [{}]", user);
+
+    opaAclChecker.checkPermissionInfo(
+        user, c.getEnvironment().getRegion().getRegionInfo().getTable(), Action.WRITE);
+
+    // as per default access controller
     return null;
   }
 
