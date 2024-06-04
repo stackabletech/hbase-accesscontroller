@@ -1,13 +1,12 @@
 package tech.stackable.hbase;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
-import static org.apache.hadoop.hbase.security.access.SecureTestUtil.*;
-import static org.junit.Assert.*;
+import static org.apache.hadoop.hbase.security.access.SecureTestUtil.createTable;
+import static org.apache.hadoop.hbase.security.access.SecureTestUtil.deleteTable;
 
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
-import org.apache.hadoop.hbase.*;
-import org.apache.hadoop.hbase.client.*;
-import org.apache.hadoop.hbase.security.access.*;
+import org.apache.hadoop.hbase.HColumnDescriptor;
+import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.junit.Rule;
 import org.junit.Test;

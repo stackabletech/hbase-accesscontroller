@@ -1,6 +1,5 @@
 package tech.stackable.hbase;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.apache.hadoop.hbase.AuthUtil.toGroupEntry;
 import static org.apache.hadoop.hbase.security.access.SecureTestUtil.*;
 import static org.junit.Assert.*;
@@ -8,8 +7,12 @@ import static org.junit.Assert.*;
 import com.google.protobuf.BlockingRpcChannel;
 import java.util.Arrays;
 import java.util.Collection;
-import org.apache.hadoop.hbase.*;
-import org.apache.hadoop.hbase.client.*;
+import org.apache.hadoop.hbase.HConstants;
+import org.apache.hadoop.hbase.NamespaceDescriptor;
+import org.apache.hadoop.hbase.TableName;
+import org.apache.hadoop.hbase.client.Connection;
+import org.apache.hadoop.hbase.client.ConnectionFactory;
+import org.apache.hadoop.hbase.client.Table;
 import org.apache.hadoop.hbase.protobuf.generated.AccessControlProtos;
 import org.apache.hadoop.hbase.security.Superusers;
 import org.apache.hadoop.hbase.security.User;
