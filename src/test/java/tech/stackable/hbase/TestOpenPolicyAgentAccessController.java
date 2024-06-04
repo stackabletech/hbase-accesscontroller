@@ -3,6 +3,7 @@ package tech.stackable.hbase;
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.apache.hadoop.hbase.security.access.SecureTestUtil.createTable;
 import static org.apache.hadoop.hbase.security.access.SecureTestUtil.deleteTable;
+import static org.junit.Assert.fail;
 
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import java.util.ArrayList;
@@ -12,6 +13,7 @@ import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Table;
 import org.apache.hadoop.hbase.util.Bytes;
+import org.apache.hadoop.security.AccessControlException;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -21,8 +23,8 @@ public class TestOpenPolicyAgentAccessController extends TestUtils {
   @Rule public WireMockRule wireMockRule = new WireMockRule(8089);
 
   @Test
-  public void testPrePut() throws Exception {
-    LOG.info("testPrePut - start");
+  public void testCreateAndPut() throws Exception {
+    LOG.info("testCreateAndPut - start");
 
     stubFor(post("/").willReturn(ok().withBody("{\"result\": \"true\"}")));
 
@@ -45,7 +47,28 @@ public class TestOpenPolicyAgentAccessController extends TestUtils {
     deleteTable(TEST_UTIL, TEST_TABLE);
 
     tearDown();
-    LOG.info("testPrePut - complete");
+    LOG.info("testCreateAndPut - complete");
+  }
+
+  @Test
+  public void testDeniedCreate() throws Exception {
+    LOG.info("testDeniedCreate - start");
+    // let all set-up calls succeed
+    stubFor(post("/").willReturn(ok().withBody("{\"result\": \"true\"}")));
+    setup(OpenPolicyAgentAccessController.class, false, OPA_URL);
+
+    try {
+      // re-stub so that any subsequent calls will fail
+      stubFor(post("/").willReturn(ok().withBody("{\"result\": \"false\"}")));
+      HTableDescriptor htd = getHTableDescriptor();
+      createTable(TEST_UTIL, TEST_UTIL.getAdmin(), htd, new byte[][] {Bytes.toBytes("s")});
+      fail("AccessControlException should have been thrown");
+    } catch (AccessControlException e) {
+      LOG.info("AccessControlException as expected: [{}]", e.getMessage());
+    }
+
+    tearDown();
+    LOG.info("testDeniedCreate - complete");
   }
 
   private static HTableDescriptor getHTableDescriptor() {
