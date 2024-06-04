@@ -1,7 +1,5 @@
 # From root folder....
-# docker build -f ./test/Dockerfile -t docker.stackable.tech/stackable/hbase:2.4.17-stackable0.0.0-dev-opa
+#   docker build -f ./test/Dockerfile -t docker.stackable.tech/sandbox/hbase:2.6.0-stackable0.0.0-opa .
+FROM docker.stackable.tech/sandbox/hbase:2.6.0-stackable0.0.0-dev
 
-FROM docker.stackable.tech/stackable/hbase:2.4.17-stackable0.0.0-dev
-
-RUN rm -rf /stackable/hbase/lib/hbase-opa-authorizer-*.jar
-COPY --chown=stackable:stackable ./target/hbase-opa-authorizer-*.jar /stackable/hbase/lib/
+COPY  --chown=stackable:stackable target/hbase-opa-authorizer-0.1.0.jar /stackable/hbase/lib/hbase-opa-authorizer-0.1.0.jar
