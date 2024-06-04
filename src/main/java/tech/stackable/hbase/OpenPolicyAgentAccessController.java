@@ -5,6 +5,7 @@ import com.google.protobuf.RpcController;
 import java.io.IOException;
 import java.util.Optional;
 import org.apache.hadoop.hbase.CoprocessorEnvironment;
+import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.*;
 import org.apache.hadoop.hbase.coprocessor.*;
 import org.apache.hadoop.hbase.io.hfile.HFile;
@@ -80,7 +81,7 @@ public class OpenPolicyAgentAccessController
     User user = getActiveUser(c);
     LOG.info("preCreateTable: user [{}]", user);
 
-    opaAclChecker.checkPermissionInfo(user, desc.getTableName(), Action.WRITE);
+    opaAclChecker.checkPermissionInfo(user, desc.getTableName(), Action.CREATE);
   }
 
   @Override
@@ -94,6 +95,27 @@ public class OpenPolicyAgentAccessController
     i.e. we do not need this if we are managing permissions in Opa.
      */
     LOG.info("postCompletedCreateTableAction: not implemented!");
+  }
+
+  @Override
+  public void preDeleteTable(ObserverContext<MasterCoprocessorEnvironment> c, TableName tableName)
+      throws IOException {
+    User user = getActiveUser(c);
+    LOG.info("preDeleteTable: user [{}]", user);
+
+    // the default access controller treats create/delete as requiring the same permissions.
+    opaAclChecker.checkPermissionInfo(user, tableName, Action.CREATE);
+  }
+
+  @Override
+  public void postDeleteTable(
+      ObserverContext<MasterCoprocessorEnvironment> c, final TableName tableName) {
+    /*
+    The default AccessController switches from the current user to the real hbase login user
+    (User.runAsLoginUser) for updating table permissions.
+    i.e. we do not need this if we are managing permissions in Opa.
+     */
+    LOG.info("postDeleteTable: not implemented!");
   }
 
   @Override
