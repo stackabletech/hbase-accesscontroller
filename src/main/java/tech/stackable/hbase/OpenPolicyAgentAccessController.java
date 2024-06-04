@@ -32,23 +32,20 @@ public class OpenPolicyAgentAccessController
   private static final Logger LOG = LoggerFactory.getLogger(OpenPolicyAgentAccessController.class);
 
   private UserProvider userProvider;
-  private boolean authorizationEnabled;
-  private boolean cellFeaturesEnabled;
-
   private OpaAclChecker opaAclChecker;
 
   // Opa-related
   public static final String OPA_POLICY_URL_PROP = "hbase.security.authorization.opa.policy.url";
 
   @Override
-  public void start(CoprocessorEnvironment env) throws IOException {
-    authorizationEnabled = AccessChecker.isAuthorizationSupported(env.getConfiguration());
+  public void start(CoprocessorEnvironment env) {
+    boolean authorizationEnabled = AccessChecker.isAuthorizationSupported(env.getConfiguration());
     if (!authorizationEnabled) {
       LOG.warn(
           "OpenPolicyAgentAccessController has been loaded with authorization checks DISABLED!");
     }
 
-    cellFeaturesEnabled =
+    boolean cellFeaturesEnabled =
         (HFile.getFormatVersion(env.getConfiguration()) >= HFile.MIN_FORMAT_VERSION_WITH_TAGS);
     if (!cellFeaturesEnabled) {
       LOG.info(

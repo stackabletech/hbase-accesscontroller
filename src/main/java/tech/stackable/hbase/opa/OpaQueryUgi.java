@@ -6,15 +6,15 @@ import org.apache.hadoop.security.UserGroupInformation;
 
 public class OpaQueryUgi {
   // Wrapping this
-  public OpaQueryUgi realUser;
-  public String userName;
-  public String shortUserName;
+  public final OpaQueryUgi realUser;
+  public final String userName;
+  public final String shortUserName;
 
   public String primaryGroup;
-  public List<String> groups;
+  public final List<String> groups;
 
-  public UserGroupInformation.AuthenticationMethod authenticationMethod;
-  public UserGroupInformation.AuthenticationMethod realAuthenticationMethod;
+  public final UserGroupInformation.AuthenticationMethod authenticationMethod;
+  public final UserGroupInformation.AuthenticationMethod realAuthenticationMethod;
 
   /**
    * Wrapper around {@link UserGroupInformation}, which does not throw random errors during

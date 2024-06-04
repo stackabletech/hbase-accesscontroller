@@ -33,9 +33,9 @@ public class TestUtils {
   protected static Connection systemUserConnection;
   protected static RegionCoprocessor ACCESS_CONTROLLER;
 
-  protected static byte[] TEST_FAMILY = Bytes.toBytes("f1");
-  protected static byte[] TEST_QUALIFIER = Bytes.toBytes("q1");
-  protected static TableName TEST_TABLE = TableName.valueOf("testtable1");
+  protected static final byte[] TEST_FAMILY = Bytes.toBytes("f1");
+  protected static final byte[] TEST_QUALIFIER = Bytes.toBytes("q1");
+  protected static final TableName TEST_TABLE = TableName.valueOf("testtable1");
 
   protected static User SUPERUSER;
   protected static User USER_ADMIN;
@@ -216,7 +216,7 @@ public class TestUtils {
       deleteTable(TEST_UTIL, TEST_TABLE);
     } catch (TableNotFoundException ex) {
       // Test deleted the table, no problem
-      LOG.info("Test deleted table " + TEST_TABLE);
+      LOG.info("Test deleted table {}", TEST_TABLE);
     }
     // Verify all table/namespace permissions are erased
     assertEquals(0, PermissionStorage.getTablePermissions(conf, TEST_TABLE).size());
@@ -237,20 +237,18 @@ public class TestUtils {
       Collection<String> superUsers)
       throws Throwable {
     AccessTestAction tableUserPermissionAction =
-        new AccessTestAction() {
-          @Override
-          public Object run() throws Exception {
-            try (Connection conn = ConnectionFactory.createConnection(conf)) {
-              conn.getAdmin()
-                  .getUserPermissions(
-                      GetUserPermissionsRequest.newBuilder(TEST_TABLE)
-                          .withFamily(TEST_FAMILY)
-                          .withQualifier(TEST_QUALIFIER)
-                          .withUserName("dummy")
-                          .build());
-            }
-            return null;
+        () -> {
+          try (Connection conn1 = ConnectionFactory.createConnection(conf)) {
+            conn1
+                .getAdmin()
+                .getUserPermissions(
+                    GetUserPermissionsRequest.newBuilder(TEST_TABLE)
+                        .withFamily(TEST_FAMILY)
+                        .withQualifier(TEST_QUALIFIER)
+                        .withUserName("dummy")
+                        .build());
           }
+          return null;
         };
     verifyAllowed(tableUserPermissionAction, SUPERUSER, USER_ADMIN, USER_OWNER, USER_ADMIN_CF);
     verifyDenied(tableUserPermissionAction, USER_CREATE, USER_RW, USER_RO, USER_NONE, USER_CREATE);
@@ -382,18 +380,14 @@ public class TestUtils {
       String namespace2)
       throws Throwable {
     AccessTestAction namespaceUserPermissionAction =
-        new AccessTestAction() {
-          @Override
-          public Object run() throws Exception {
-            try (Connection conn = ConnectionFactory.createConnection(conf)) {
-              conn.getAdmin()
-                  .getUserPermissions(
-                      GetUserPermissionsRequest.newBuilder(namespace1)
-                          .withUserName("dummy")
-                          .build());
-            }
-            return null;
+        () -> {
+          try (Connection conn1 = ConnectionFactory.createConnection(conf)) {
+            conn1
+                .getAdmin()
+                .getUserPermissions(
+                    GetUserPermissionsRequest.newBuilder(namespace1).withUserName("dummy").build());
           }
+          return null;
         };
     verifyAllowed(
         namespaceUserPermissionAction,
@@ -448,16 +442,14 @@ public class TestUtils {
       throws Throwable {
     // Verify action privilege
     AccessTestAction globalUserPermissionAction =
-        new AccessTestAction() {
-          @Override
-          public Object run() throws Exception {
-            try (Connection conn = ConnectionFactory.createConnection(conf)) {
-              conn.getAdmin()
-                  .getUserPermissions(
-                      GetUserPermissionsRequest.newBuilder().withUserName("dummy").build());
-            }
-            return null;
+        () -> {
+          try (Connection conn1 = ConnectionFactory.createConnection(conf)) {
+            conn1
+                .getAdmin()
+                .getUserPermissions(
+                    GetUserPermissionsRequest.newBuilder().withUserName("dummy").build());
           }
+          return null;
         };
     verifyAllowed(globalUserPermissionAction, SUPERUSER, USER_ADMIN, USER_GROUP_ADMIN);
     verifyDenied(globalUserPermissionAction, USER_GROUP_CREATE, USER_GROUP_READ, USER_GROUP_WRITE);
@@ -500,12 +492,12 @@ public class TestUtils {
           assertTrue(Bytes.equals(cq, tablePerm.getQualifier()));
         }
         if (userName != null && (superUsers == null || !superUsers.contains(perm.getUser()))) {
-          assertTrue(userName.equals(perm.getUser()));
+          assertEquals(userName, perm.getUser());
         }
       } else if (perm.getPermission() instanceof NamespacePermission
           || perm.getPermission() instanceof GlobalPermission) {
         if (userName != null && (superUsers == null || !superUsers.contains(perm.getUser()))) {
-          assertTrue(userName.equals(perm.getUser()));
+          assertEquals(userName, perm.getUser());
         }
       }
     }

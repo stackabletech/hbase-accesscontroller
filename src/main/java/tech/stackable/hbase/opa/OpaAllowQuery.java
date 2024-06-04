@@ -12,9 +12,9 @@ public class OpaAllowQuery {
   }
 
   public static class OpaAllowQueryInput {
-    public OpaQueryUgi callerUgi;
-    public TableName table;
-    public Permission.Action action;
+    public final OpaQueryUgi callerUgi;
+    public final TableName table;
+    public final Permission.Action action;
 
     public OpaAllowQueryInput(UserGroupInformation ugi, TableName table, Permission.Action action) {
       this.callerUgi = new OpaQueryUgi(ugi);

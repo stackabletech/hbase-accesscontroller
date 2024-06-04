@@ -77,7 +77,7 @@ public class OpaAclChecker {
     }
 
     LOG.info("Request body:\n{}", prettyPrinted);
-    HttpResponse<String> response = null;
+    HttpResponse<String> response;
     try {
       response =
           httpClient.send(
