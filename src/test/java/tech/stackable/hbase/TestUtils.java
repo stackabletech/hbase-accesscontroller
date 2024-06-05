@@ -13,6 +13,8 @@ import org.apache.hadoop.hbase.*;
 import org.apache.hadoop.hbase.client.Connection;
 import org.apache.hadoop.hbase.client.ConnectionFactory;
 import org.apache.hadoop.hbase.coprocessor.CoprocessorHost;
+import org.apache.hadoop.hbase.coprocessor.MasterCoprocessor;
+import org.apache.hadoop.hbase.coprocessor.MasterCoprocessorEnvironment;
 import org.apache.hadoop.hbase.coprocessor.RegionCoprocessor;
 import org.apache.hadoop.hbase.io.hfile.HFile;
 import org.apache.hadoop.hbase.master.MasterCoprocessorHost;
@@ -31,7 +33,11 @@ public class TestUtils {
   protected static final HBaseTestingUtility TEST_UTIL = new HBaseTestingUtility();
   protected static Configuration conf;
   protected static Connection systemUserConnection;
-  protected static RegionCoprocessor ACCESS_CONTROLLER;
+
+  // we can't specify AccessController here as we have our own impl
+  protected static MasterCoprocessor MASTER_ACCESS_CONTROLLER;
+  protected static RegionCoprocessor REGION_ACCESS_CONTROLLER;
+  protected static MasterCoprocessorEnvironment CP_ENV;
 
   protected static final byte[] TEST_FAMILY = Bytes.toBytes("f1");
   protected static final byte[] TEST_QUALIFIER = Bytes.toBytes("q1");
@@ -95,20 +101,26 @@ public class TestUtils {
     MasterCoprocessorHost masterCpHost =
         TEST_UTIL.getMiniHBaseCluster().getMaster().getMasterCoprocessorHost();
     masterCpHost.load(accessControllerClass, Coprocessor.PRIORITY_HIGHEST, conf);
-    ACCESS_CONTROLLER = (RegionCoprocessor) masterCpHost.findCoprocessor(accessControllerClass);
+    MASTER_ACCESS_CONTROLLER = masterCpHost.findCoprocessor(accessControllerClass);
 
     for (int i = 0; i < TEST_UTIL.getMiniHBaseCluster().getNumLiveRegionServers(); i++) {
       RegionServerCoprocessorHost regionCpHost =
           TEST_UTIL.getMiniHBaseCluster().getRegionServer(i).getRegionServerCoprocessorHost();
       regionCpHost.load(accessControllerClass, Coprocessor.PRIORITY_HIGHEST, conf);
     }
-    ACCESS_CONTROLLER =
+    REGION_ACCESS_CONTROLLER =
         (RegionCoprocessor)
             TEST_UTIL
                 .getMiniHBaseCluster()
                 .getRegionServer(0)
                 .getRegionServerCoprocessorHost()
                 .findCoprocessor(accessControllerClass);
+
+    CP_ENV =
+        masterCpHost.createEnvironment(
+            MASTER_ACCESS_CONTROLLER, Coprocessor.PRIORITY_HIGHEST, 1, conf);
+    RegionServerCoprocessorHost rsCpHost =
+        TEST_UTIL.getMiniHBaseCluster().getRegionServer(0).getRegionServerCoprocessorHost();
 
     if (usesAclTable) {
       TEST_UTIL.waitUntilAllRegionsAssigned(PermissionStorage.ACL_TABLE_NAME);
@@ -144,7 +156,7 @@ public class TestUtils {
 
     HRegion region = TEST_UTIL.getHBaseCluster().getRegions(TEST_TABLE).get(0);
     RegionCoprocessorHost rcpHost = region.getCoprocessorHost();
-    rcpHost.createEnvironment(ACCESS_CONTROLLER, Coprocessor.PRIORITY_HIGHEST, 1, conf);
+    rcpHost.createEnvironment(REGION_ACCESS_CONTROLLER, Coprocessor.PRIORITY_HIGHEST, 1, conf);
 
     // Set up initial grants
 

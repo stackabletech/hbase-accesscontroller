@@ -10,8 +10,11 @@ import java.util.ArrayList;
 import java.util.List;
 import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.HTableDescriptor;
-import org.apache.hadoop.hbase.client.Put;
-import org.apache.hadoop.hbase.client.Table;
+import org.apache.hadoop.hbase.client.*;
+import org.apache.hadoop.hbase.coprocessor.ObserverContextImpl;
+import org.apache.hadoop.hbase.master.MasterCoprocessorHost;
+import org.apache.hadoop.hbase.security.User;
+import org.apache.hadoop.hbase.security.access.SecureTestUtil;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.security.AccessControlException;
 import org.junit.Rule;
@@ -27,7 +30,6 @@ public class TestOpenPolicyAgentAccessController extends TestUtils {
     LOG.info("testCreateAndPut - start");
 
     stubFor(post("/").willReturn(ok().withBody("{\"result\": \"true\"}")));
-
     setup(OpenPolicyAgentAccessController.class, false, OPA_URL);
 
     HTableDescriptor htd = getHTableDescriptor();
@@ -53,6 +55,7 @@ public class TestOpenPolicyAgentAccessController extends TestUtils {
   @Test
   public void testDeniedCreate() throws Exception {
     LOG.info("testDeniedCreate - start");
+
     // let all set-up calls succeed
     stubFor(post("/").willReturn(ok().withBody("{\"result\": \"true\"}")));
     setup(OpenPolicyAgentAccessController.class, false, OPA_URL);
@@ -71,6 +74,38 @@ public class TestOpenPolicyAgentAccessController extends TestUtils {
     LOG.info("testDeniedCreate - complete");
   }
 
+  @Test
+  public void testDeniedCreateByUser() throws Exception {
+    stubFor(post("/").willReturn(ok().withBody("{\"result\": \"true\"}")));
+    setup(OpenPolicyAgentAccessController.class, false, OPA_URL);
+
+    User userDenied = User.createUserForTesting(conf, "cannotCreateTables", new String[0]);
+
+    SecureTestUtil.AccessTestAction createTable =
+        () -> {
+          HTableDescriptor htd = getHTableDescriptor();
+          getOpaController()
+              .preCreateTable(ObserverContextImpl.createAndPrepare(CP_ENV), htd, null);
+          return null;
+        };
+
+    // re-stub so that the call fails for the given user
+    stubFor(
+        post("/")
+            .withRequestBody(
+                matchingJsonPath("$.input.callerUgi[?(@.userName == 'cannotCreateTables')]"))
+            .willReturn(ok().withBody("{\"result\": \"false\"}")));
+
+    try {
+      userDenied.runAs(createTable);
+      fail("AccessControlException should have been thrown");
+    } catch (AccessControlException e) {
+      LOG.info("AccessControlException as expected: [{}]", e.getMessage());
+    }
+
+    tearDown();
+  }
+
   private static HTableDescriptor getHTableDescriptor() {
     HTableDescriptor htd = new HTableDescriptor(TEST_TABLE);
     HColumnDescriptor hcd = new HColumnDescriptor(TEST_FAMILY);
@@ -79,5 +114,11 @@ public class TestOpenPolicyAgentAccessController extends TestUtils {
     htd.setOwner(USER_OWNER);
 
     return htd;
+  }
+
+  private OpenPolicyAgentAccessController getOpaController() {
+    MasterCoprocessorHost masterCpHost =
+        TEST_UTIL.getMiniHBaseCluster().getMaster().getMasterCoprocessorHost();
+    return masterCpHost.findCoprocessor(OpenPolicyAgentAccessController.class);
   }
 }
