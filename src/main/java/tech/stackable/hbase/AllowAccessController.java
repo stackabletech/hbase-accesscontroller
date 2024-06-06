@@ -3,10 +3,8 @@ package tech.stackable.hbase;
 import com.google.protobuf.RpcCallback;
 import com.google.protobuf.RpcController;
 import java.io.IOException;
-import java.util.Collection;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
+import java.util.*;
+import org.apache.hadoop.hbase.CoprocessorEnvironment;
 import org.apache.hadoop.hbase.HBaseInterfaceAudience;
 import org.apache.hadoop.hbase.NamespaceDescriptor;
 import org.apache.hadoop.hbase.TableName;
@@ -14,6 +12,8 @@ import org.apache.hadoop.hbase.client.RegionInfo;
 import org.apache.hadoop.hbase.client.TableDescriptor;
 import org.apache.hadoop.hbase.coprocessor.*;
 import org.apache.hadoop.hbase.protobuf.generated.AccessControlProtos;
+import org.apache.hadoop.hbase.security.User;
+import org.apache.hadoop.hbase.security.UserProvider;
 import org.apache.hadoop.hbase.security.access.Permission;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.yetus.audience.InterfaceAudience;
@@ -34,6 +34,22 @@ public class AllowAccessController
         BulkLoadObserver {
 
   private static final Logger LOG = LoggerFactory.getLogger(AllowAccessController.class);
+
+  private UserProvider userProvider;
+
+  /******************************** Coprocessor implementations ********************************/
+  @Override
+  public void start(CoprocessorEnvironment env) {
+    // set the user-provider.
+    this.userProvider = UserProvider.instantiate(env.getConfiguration());
+
+    LOG.info("AllowAccessController started");
+  }
+
+  @Override
+  public void stop(CoprocessorEnvironment env) {
+    LOG.info("AllowAccessController stopped");
+  }
 
   /******************************** AccessControlService.Interface implementations ********************************/
   // Methods of the AccessControlService.Interface have no default implementation.
@@ -120,6 +136,37 @@ public class AllowAccessController
     requireGlobalPermission(ctx, "deleteNamespace", Permission.Action.ADMIN, namespace);
   }
 
+  /*********************************** Observer/Service Getters ***********************************/
+  @Override
+  public Optional<RegionObserver> getRegionObserver() {
+    LOG.info("getRegionObserver");
+    return Optional.of(this);
+  }
+
+  @Override
+  public Optional<MasterObserver> getMasterObserver() {
+    LOG.info("getMasterObserver");
+    return Optional.of(this);
+  }
+
+  @Override
+  public Optional<EndpointObserver> getEndpointObserver() {
+    LOG.info("getEndpointObserver");
+    return Optional.of(this);
+  }
+
+  @Override
+  public Optional<BulkLoadObserver> getBulkLoadObserver() {
+    LOG.info("getBulkLoadObserver");
+    return Optional.of(this);
+  }
+
+  @Override
+  public Optional<RegionServerObserver> getRegionServerObserver() {
+    LOG.info("getRegionServerObserver");
+    return Optional.of(this);
+  }
+
   /*********************************** Private ***********************************/
   // These should probably be implemented in a policy backend that interacts with OPA.
 
@@ -131,10 +178,10 @@ public class AllowAccessController
       Map<byte[], ? extends Collection<byte[]>> familyMap,
       Permission.Action... permissions)
       throws IOException {
-    // accessChecker.requireNamespacePermission(getActiveUser(ctx), request, namespace, tableName,
-    // familyMap, permissions);
+    var user = getActiveUser(ctx);
     LOG.info(
-        "requireNamespacePermission namespace={}, tableName={}, familyMap={}, permissions={}",
+        "requireNamespacePermission user={}, namespace={}, tableName={}, familyMap={}, permissions={}",
+        user,
         namespace,
         tableName,
         familyMap,
@@ -165,5 +212,14 @@ public class AllowAccessController
       throws IOException {
     // accessChecker.requireGlobalPermission(getActiveUser(ctx), request, perm, namespace);
     LOG.info("requireGlobalPermission namespace={}, perm={}", namespace, perm);
+  }
+
+  private User getActiveUser(ObserverContext<?> ctx) throws IOException {
+    // for non-rpc handling, fallback to system user
+    Optional<User> optionalUser = ctx.getCaller();
+    if (optionalUser.isPresent()) {
+      return optionalUser.get();
+    }
+    return userProvider.getCurrent();
   }
 }
