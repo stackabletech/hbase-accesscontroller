@@ -162,7 +162,7 @@ public class TestOpenPolicyAgentAccessController extends TestUtils {
     }
 
     // ...which we can then inspect
-    LOG.info("OPA cache entries: {}", getOpaController().getAclCache().entrySet().toString());
+    LOG.info("OPA cache entries: {}", getOpaController().getAclCache().entrySet());
     // we should have only a single entry for this user as subsequent calls will hit the cache
     assertEquals(1, getOpaController().getAclCache().get("useCacheUser").entrySet().size());
     tearDown();

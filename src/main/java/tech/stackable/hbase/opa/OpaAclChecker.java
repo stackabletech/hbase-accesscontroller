@@ -157,7 +157,7 @@ public class OpaAclChecker {
   }
 
   private Map<Permission.Action, Boolean> getOpaAclCache(
-      User user, TableName table, Permission.Action action) throws AccessControlException {
+      User user, TableName table, Permission.Action action) {
     if (!aclCache.containsKey(user.getName())) {
       aclCache.put(user.getName(), new HashMap<>());
     }
