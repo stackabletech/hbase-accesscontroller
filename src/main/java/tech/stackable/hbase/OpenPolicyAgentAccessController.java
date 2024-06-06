@@ -3,12 +3,12 @@ package tech.stackable.hbase;
 import com.google.protobuf.RpcCallback;
 import com.google.protobuf.RpcController;
 import java.io.IOException;
+import java.util.Map;
 import java.util.Optional;
 import org.apache.hadoop.hbase.CoprocessorEnvironment;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.*;
 import org.apache.hadoop.hbase.coprocessor.*;
-import org.apache.hadoop.hbase.io.hfile.HFile;
 import org.apache.hadoop.hbase.protobuf.generated.AccessControlProtos;
 import org.apache.hadoop.hbase.security.User;
 import org.apache.hadoop.hbase.security.UserProvider;
@@ -37,11 +37,14 @@ public class OpenPolicyAgentAccessController
   // Opa-related
   public static final String OPA_POLICY_URL_PROP = "hbase.security.authorization.opa.policy.url";
   public static final String OPA_POLICY_DRYRUN = "hbase.security.authorization.opa.policy.dryrun";
+  public static final String OPA_POLICY_CACHE =
+      "hbase.security.authorization.opa.policy.cache.active";
 
   @Override
   public void start(CoprocessorEnvironment env) {
     boolean authorizationEnabled = AccessChecker.isAuthorizationSupported(env.getConfiguration());
     boolean dryRun = env.getConfiguration().getBoolean(OPA_POLICY_DRYRUN, false);
+    boolean useCache = env.getConfiguration().getBoolean(OPA_POLICY_CACHE, false);
 
     if (!authorizationEnabled) {
       LOG.warn(
@@ -51,22 +54,20 @@ public class OpenPolicyAgentAccessController
       LOG.warn("OpenPolicyAgentAccessController has been loaded in dryRun mode...");
     }
 
-    boolean cellFeaturesEnabled =
-        (HFile.getFormatVersion(env.getConfiguration()) >= HFile.MIN_FORMAT_VERSION_WITH_TAGS);
-    if (!cellFeaturesEnabled) {
-      LOG.info(
-          "A minimum HFile version of [{}] is required to persist cell ACLs. "
-              + "Consider setting [{}] accordingly.",
-          HFile.MIN_FORMAT_VERSION_WITH_TAGS,
-          HFile.FORMAT_VERSION_KEY);
-    }
     // set the user-provider.
     this.userProvider = UserProvider.instantiate(env.getConfiguration());
 
     // opa-related
     this.opaAclChecker =
         new OpaAclChecker(
-            authorizationEnabled, env.getConfiguration().get(OPA_POLICY_URL_PROP), dryRun);
+            authorizationEnabled,
+            env.getConfiguration().get(OPA_POLICY_URL_PROP),
+            dryRun,
+            useCache);
+  }
+
+  public Map<String, Map<TableName, Map<Action, Boolean>>> getAclCache() {
+    return opaAclChecker.getAclCache();
   }
 
   private User getActiveUser(ObserverContext<?> ctx) throws IOException {

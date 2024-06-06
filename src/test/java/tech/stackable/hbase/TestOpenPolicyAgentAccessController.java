@@ -3,6 +3,7 @@ package tech.stackable.hbase;
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.apache.hadoop.hbase.security.access.SecureTestUtil.createTable;
 import static org.apache.hadoop.hbase.security.access.SecureTestUtil.deleteTable;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
@@ -109,7 +110,7 @@ public class TestOpenPolicyAgentAccessController extends TestUtils {
   @Test
   public void testDryRun() throws Exception {
     stubFor(post("/").willReturn(ok().withBody("{\"result\": \"true\"}")));
-    setup(OpenPolicyAgentAccessController.class, false, OPA_URL, true);
+    setup(OpenPolicyAgentAccessController.class, false, OPA_URL, true, false);
 
     User userDenied = User.createUserForTesting(conf, "cannotCreateTables", new String[0]);
 
@@ -135,6 +136,35 @@ public class TestOpenPolicyAgentAccessController extends TestUtils {
       fail("AccessControlException should have been thrown");
     }
 
+    tearDown();
+  }
+
+  @Test
+  public void testUseCache() throws Exception {
+    stubFor(post("/").willReturn(ok().withBody("{\"result\": \"true\"}")));
+    setup(OpenPolicyAgentAccessController.class, false, OPA_URL, false, true);
+
+    User userDenied = User.createUserForTesting(conf, "useCacheUser", new String[0]);
+
+    // create a table explicitly using the cache from the cp-processor on the master...
+    SecureTestUtil.AccessTestAction createTable =
+        () -> {
+          HTableDescriptor htd = getHTableDescriptor();
+          getOpaController()
+              .preCreateTable(ObserverContextImpl.createAndPrepare(CP_ENV), htd, null);
+          return null;
+        };
+
+    try {
+      userDenied.runAs(createTable);
+    } catch (AccessControlException e) {
+      fail("AccessControlException should have been thrown");
+    }
+
+    // ...which we can then inspect
+    LOG.info("OPA cache entries: {}", getOpaController().getAclCache().entrySet().toString());
+    // we should have only a single entry for this user as subsequent calls will hit the cache
+    assertEquals(1, getOpaController().getAclCache().get("useCacheUser").entrySet().size());
     tearDown();
   }
 

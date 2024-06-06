@@ -24,14 +24,19 @@ public class OpaAclChecker {
   private static final Logger LOG = LoggerFactory.getLogger(OpaAclChecker.class);
   private final boolean authorizationEnabled;
   private final boolean dryRun;
+  private final boolean useCache;
   private final HttpClient httpClient = HttpClient.newHttpClient();
   private URI opaUri;
   private final ObjectMapper json;
-  private Map<String, Map<TableName, Set<Permission.Action>>> aclCache = new ConcurrentHashMap<>();
 
-  public OpaAclChecker(boolean authorizationEnabled, String opaPolicyUrl, boolean dryRun) {
+  private final Map<String, Map<TableName, Map<Permission.Action, Boolean>>> aclCache =
+      new ConcurrentHashMap<>();
+
+  public OpaAclChecker(
+      boolean authorizationEnabled, String opaPolicyUrl, boolean dryRun, boolean useCache) {
     this.authorizationEnabled = authorizationEnabled;
     this.dryRun = dryRun;
+    this.useCache = useCache;
 
     this.json =
         new ObjectMapper()
@@ -60,19 +65,6 @@ public class OpaAclChecker {
       return;
     }
 
-    // inspect cache for the user/table/action combination
-    //    if (!aclCache.containsKey(user.getName())) {
-    //      aclCache.put(user.getName(), new HashMap<>());
-    //    }
-    //    Map<TableName, Set<Permission.Action>> tableCache = aclCache.get(user.getName());
-    //    if (!tableCache.containsKey(table)) {
-    //      tableCache.put(table, new HashSet<>());
-    //    }
-    //    Set<Permission.Action> actions = tableCache.get(table);
-    //    if (actions.contains(action)) {
-    //      return;
-    //    }
-
     OpaAllowQuery query =
         new OpaAllowQuery(new OpaAllowQuery.OpaAllowQueryInput(user.getUGI(), table, action));
 
@@ -94,9 +86,22 @@ public class OpaAclChecker {
     }
 
     LOG.info("Request body:\n{}", prettyPrinted);
-    if (dryRun) {
+    if (this.dryRun) {
       LOG.info("Dry run request: omitting call.");
       return;
+    }
+
+    // inspect cache for the user/table/action combination
+    var actionCache = getOpaAclCache(user, table, action);
+    if (this.useCache) {
+      if (actionCache.get(action) != null) {
+        if (actionCache.get(action)) {
+          LOG.info("Permission exists in OPA-policy-cache, by-passing policy call");
+          return;
+        } else {
+          throw new AccessControlException("OPA denied the request (denial already cached");
+        }
+      }
     }
 
     HttpResponse<String> response;
@@ -108,7 +113,7 @@ public class OpaAclChecker {
                   .POST(HttpRequest.BodyPublishers.ofString(body))
                   .build(),
               HttpResponse.BodyHandlers.ofString());
-      LOG.info("Opa response: {}", response.body());
+      LOG.info("OPA response: {}", response.body());
     } catch (Exception e) {
       LOG.error(e.getMessage());
       throw new OpaException.QueryFailed(e);
@@ -130,13 +135,50 @@ public class OpaAclChecker {
       throw new OpaException.DeserializeFailed(e);
     }
 
+    // return result after updating the cache
     if (result.result == null || !result.result) {
+      updateCache(user, table, action, actionCache, Boolean.FALSE);
       throw new AccessControlException("OPA denied the request");
+    } else {
+      updateCache(user, table, action, actionCache, Boolean.TRUE);
     }
+  }
+
+  private void updateCache(
+      User user,
+      TableName table,
+      Permission.Action action,
+      Map<Permission.Action, Boolean> actionCache,
+      Boolean actionAllowed) {
+    if (this.useCache) {
+      LOG.info("Updating OPA cache: {}/{}/{}/{}", user, table, action, actionAllowed);
+      actionCache.put(action, actionAllowed);
+    }
+  }
+
+  private Map<Permission.Action, Boolean> getOpaAclCache(
+      User user, TableName table, Permission.Action action) throws AccessControlException {
+    if (!aclCache.containsKey(user.getName())) {
+      aclCache.put(user.getName(), new HashMap<>());
+    }
+    var tableCache = aclCache.get(user.getName());
+    if (!tableCache.containsKey(table)) {
+      tableCache.put(table, new HashMap<>());
+    }
+    var actionCache = tableCache.get(table);
+    if (!actionCache.containsKey(action)) {
+      actionCache.put(action, null);
+    }
+    // the Boolean for this action can now be inspected
+    return actionCache;
   }
 
   private static class OpaQueryResult {
     // Boxed Boolean to detect not-present vs explicitly false
     public Boolean result;
+  }
+
+  public Map<String, Map<TableName, Map<Permission.Action, Boolean>>> getAclCache() {
+    return aclCache;
   }
 }

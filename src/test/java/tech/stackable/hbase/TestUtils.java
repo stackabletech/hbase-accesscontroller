@@ -3,6 +3,7 @@ package tech.stackable.hbase;
 import static org.apache.hadoop.hbase.AuthUtil.toGroupEntry;
 import static org.apache.hadoop.hbase.security.access.SecureTestUtil.*;
 import static org.junit.Assert.*;
+import static tech.stackable.hbase.OpenPolicyAgentAccessController.OPA_POLICY_CACHE;
 import static tech.stackable.hbase.OpenPolicyAgentAccessController.OPA_POLICY_DRYRUN;
 
 import com.google.common.base.Strings;
@@ -65,14 +66,19 @@ public class TestUtils {
 
   protected static void setup(Class accessControllerClass, boolean usesAclTable, String opaUrl)
       throws Exception {
-    setup(accessControllerClass, usesAclTable, opaUrl, false);
+    setup(accessControllerClass, usesAclTable, opaUrl, false, false);
   }
 
   protected static void setup(
-      Class accessControllerClass, boolean usesAclTable, String opaUrl, boolean dryRun)
+      Class accessControllerClass,
+      boolean usesAclTable,
+      String opaUrl,
+      boolean dryRun,
+      boolean useCache)
       throws Exception {
     conf = TEST_UTIL.getConfiguration();
     conf.setBoolean(OPA_POLICY_DRYRUN, dryRun);
+    conf.setBoolean(OPA_POLICY_CACHE, useCache);
     conf.setInt(HConstants.REGION_SERVER_HIGH_PRIORITY_HANDLER_COUNT, 10);
 
     // default is 10s which is difficult when step-through debugging
