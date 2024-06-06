@@ -106,6 +106,38 @@ public class TestOpenPolicyAgentAccessController extends TestUtils {
     tearDown();
   }
 
+  @Test
+  public void testDryRun() throws Exception {
+    stubFor(post("/").willReturn(ok().withBody("{\"result\": \"true\"}")));
+    setup(OpenPolicyAgentAccessController.class, false, OPA_URL, true);
+
+    User userDenied = User.createUserForTesting(conf, "cannotCreateTables", new String[0]);
+
+    SecureTestUtil.AccessTestAction createTable =
+        () -> {
+          HTableDescriptor htd = getHTableDescriptor();
+          getOpaController()
+              .preCreateTable(ObserverContextImpl.createAndPrepare(CP_ENV), htd, null);
+          return null;
+        };
+
+    // re-stub so that the call would fail for the given user in *non*-dryRun mode
+    stubFor(
+        post("/")
+            .withRequestBody(
+                matchingJsonPath("$.input.callerUgi[?(@.userName == 'cannotCreateTables')]"))
+            .willReturn(ok().withBody("{\"result\": \"false\"}")));
+
+    try {
+      userDenied.runAs(createTable);
+      LOG.info("Action runs as expected due to being in dryRun mode");
+    } catch (AccessControlException e) {
+      fail("AccessControlException should have been thrown");
+    }
+
+    tearDown();
+  }
+
   private static HTableDescriptor getHTableDescriptor() {
     HTableDescriptor htd = new HTableDescriptor(TEST_TABLE);
     HColumnDescriptor hcd = new HColumnDescriptor(TEST_FAMILY);

@@ -10,7 +10,8 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.Objects;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.security.User;
 import org.apache.hadoop.hbase.security.access.Permission;
@@ -22,12 +23,15 @@ import tech.stackable.hbase.OpenPolicyAgentAccessController;
 public class OpaAclChecker {
   private static final Logger LOG = LoggerFactory.getLogger(OpaAclChecker.class);
   private final boolean authorizationEnabled;
+  private final boolean dryRun;
   private final HttpClient httpClient = HttpClient.newHttpClient();
   private URI opaUri;
   private final ObjectMapper json;
+  private Map<String, Map<TableName, Set<Permission.Action>>> aclCache = new ConcurrentHashMap<>();
 
-  public OpaAclChecker(boolean authorizationEnabled, String opaPolicyUrl) {
+  public OpaAclChecker(boolean authorizationEnabled, String opaPolicyUrl, boolean dryRun) {
     this.authorizationEnabled = authorizationEnabled;
+    this.dryRun = dryRun;
 
     this.json =
         new ObjectMapper()
@@ -56,6 +60,19 @@ public class OpaAclChecker {
       return;
     }
 
+    // inspect cache for the user/table/action combination
+    //    if (!aclCache.containsKey(user.getName())) {
+    //      aclCache.put(user.getName(), new HashMap<>());
+    //    }
+    //    Map<TableName, Set<Permission.Action>> tableCache = aclCache.get(user.getName());
+    //    if (!tableCache.containsKey(table)) {
+    //      tableCache.put(table, new HashSet<>());
+    //    }
+    //    Set<Permission.Action> actions = tableCache.get(table);
+    //    if (actions.contains(action)) {
+    //      return;
+    //    }
+
     OpaAllowQuery query =
         new OpaAllowQuery(new OpaAllowQuery.OpaAllowQueryInput(user.getUGI(), table, action));
 
@@ -77,6 +94,11 @@ public class OpaAclChecker {
     }
 
     LOG.info("Request body:\n{}", prettyPrinted);
+    if (dryRun) {
+      LOG.info("Dry run request: omitting call.");
+      return;
+    }
+
     HttpResponse<String> response;
     try {
       response =
@@ -86,7 +108,7 @@ public class OpaAclChecker {
                   .POST(HttpRequest.BodyPublishers.ofString(body))
                   .build(),
               HttpResponse.BodyHandlers.ofString());
-      LOG.debug("Opa response: {}", response.body());
+      LOG.info("Opa response: {}", response.body());
     } catch (Exception e) {
       LOG.error(e.getMessage());
       throw new OpaException.QueryFailed(e);

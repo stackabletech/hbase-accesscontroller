@@ -36,13 +36,19 @@ public class OpenPolicyAgentAccessController
 
   // Opa-related
   public static final String OPA_POLICY_URL_PROP = "hbase.security.authorization.opa.policy.url";
+  public static final String OPA_POLICY_DRYRUN = "hbase.security.authorization.opa.policy.dryrun";
 
   @Override
   public void start(CoprocessorEnvironment env) {
     boolean authorizationEnabled = AccessChecker.isAuthorizationSupported(env.getConfiguration());
+    boolean dryRun = env.getConfiguration().getBoolean(OPA_POLICY_DRYRUN, false);
+
     if (!authorizationEnabled) {
       LOG.warn(
           "OpenPolicyAgentAccessController has been loaded with authorization checks DISABLED!");
+    }
+    if (dryRun) {
+      LOG.warn("OpenPolicyAgentAccessController has been loaded in dryRun mode...");
     }
 
     boolean cellFeaturesEnabled =
@@ -59,7 +65,8 @@ public class OpenPolicyAgentAccessController
 
     // opa-related
     this.opaAclChecker =
-        new OpaAclChecker(authorizationEnabled, env.getConfiguration().get(OPA_POLICY_URL_PROP));
+        new OpaAclChecker(
+            authorizationEnabled, env.getConfiguration().get(OPA_POLICY_URL_PROP), dryRun);
   }
 
   private User getActiveUser(ObserverContext<?> ctx) throws IOException {
