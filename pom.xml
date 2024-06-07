@@ -54,9 +54,15 @@
 
     <hbase.version>2.6.0</hbase.version>
     <hbase.protobuf.version>2.5.0</hbase.protobuf.version>
+    <caffeine.version>2.8.1</caffeine.version>
   </properties>
 
   <dependencies>
+    <dependency>
+      <groupId>com.github.ben-manes.caffeine</groupId>
+      <artifactId>caffeine</artifactId>
+      <version>${caffeine.version}</version>
+    </dependency>
     <dependency>
       <groupId>com.google.protobuf</groupId>
       <artifactId>protobuf-java</artifactId>

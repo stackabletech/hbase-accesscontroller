@@ -6,12 +6,15 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.security.User;
 import org.apache.hadoop.hbase.security.access.Permission;
@@ -24,19 +27,36 @@ public class OpaAclChecker {
   private static final Logger LOG = LoggerFactory.getLogger(OpaAclChecker.class);
   private final boolean authorizationEnabled;
   private final boolean dryRun;
-  private final boolean useCache;
   private final HttpClient httpClient = HttpClient.newHttpClient();
   private URI opaUri;
   private final ObjectMapper json;
 
-  private final Map<String, Map<TableName, Map<Permission.Action, Boolean>>> aclCache =
-      new ConcurrentHashMap<>();
+  private final Optional<Cache<String, Boolean>> aclCache;
+
+  public static class CacheConfig {
+    public final int ttlSeconds;
+    public final long maxSize;
+
+    public CacheConfig(int ttlSeconds, int maxSize) {
+      this.ttlSeconds = ttlSeconds;
+      this.maxSize = maxSize;
+    }
+  }
 
   public OpaAclChecker(
-      boolean authorizationEnabled, String opaPolicyUrl, boolean dryRun, boolean useCache) {
+      boolean authorizationEnabled,
+      String opaPolicyUrl,
+      boolean dryRun,
+      Optional<CacheConfig> cacheConfigOpt) {
     this.authorizationEnabled = authorizationEnabled;
     this.dryRun = dryRun;
-    this.useCache = useCache;
+    this.aclCache =
+        cacheConfigOpt.map(
+            cc ->
+                Caffeine.newBuilder()
+                    .expireAfterWrite(cc.ttlSeconds, TimeUnit.SECONDS)
+                    .maximumSize(cc.maxSize)
+                    .build());
 
     this.json =
         new ObjectMapper()
@@ -91,11 +111,10 @@ public class OpaAclChecker {
       return;
     }
 
-    // inspect cache for the user/table/action combination
-    var actionCache = getOpaAclCache(user, table, action);
-    if (this.useCache) {
-      if (actionCache.get(action) != null) {
-        if (actionCache.get(action)) {
+    if (aclCache.isPresent()) {
+      final Boolean result = aclCache.get().getIfPresent(body);
+      if (result != null) {
+        if (result) {
           LOG.info("Permission exists in OPA-policy-cache, by-passing policy call");
           return;
         } else {
@@ -135,42 +154,18 @@ public class OpaAclChecker {
       throw new OpaException.DeserializeFailed(e);
     }
 
-    // return result after updating the cache
+    // Update cache
+    if (aclCache.isPresent()) {
+      if (result.result == null || !result.result) {
+        aclCache.get().put(body, Boolean.FALSE);
+      } else {
+        aclCache.get().put(body, Boolean.TRUE);
+      }
+    }
+
     if (result.result == null || !result.result) {
-      updateCache(user, table, action, actionCache, Boolean.FALSE);
       throw new AccessControlException("OPA denied the request");
-    } else {
-      updateCache(user, table, action, actionCache, Boolean.TRUE);
     }
-  }
-
-  private void updateCache(
-      User user,
-      TableName table,
-      Permission.Action action,
-      Map<Permission.Action, Boolean> actionCache,
-      Boolean actionAllowed) {
-    if (this.useCache) {
-      LOG.info("Updating OPA cache: {}/{}/{}/{}", user, table, action, actionAllowed);
-      actionCache.put(action, actionAllowed);
-    }
-  }
-
-  private Map<Permission.Action, Boolean> getOpaAclCache(
-      User user, TableName table, Permission.Action action) {
-    if (!aclCache.containsKey(user.getName())) {
-      aclCache.put(user.getName(), new HashMap<>());
-    }
-    var tableCache = aclCache.get(user.getName());
-    if (!tableCache.containsKey(table)) {
-      tableCache.put(table, new HashMap<>());
-    }
-    var actionCache = tableCache.get(table);
-    if (!actionCache.containsKey(action)) {
-      actionCache.put(action, null);
-    }
-    // the Boolean for this action can now be inspected
-    return actionCache;
   }
 
   private static class OpaQueryResult {
@@ -178,7 +173,7 @@ public class OpaAclChecker {
     public Boolean result;
   }
 
-  public Map<String, Map<TableName, Map<Permission.Action, Boolean>>> getAclCache() {
-    return aclCache;
+  public Optional<Long> getAclCacheSize() {
+    return aclCache.map(ac -> ac.estimatedSize());
   }
 }

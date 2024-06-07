@@ -3,7 +3,6 @@ package tech.stackable.hbase;
 import com.google.protobuf.RpcCallback;
 import com.google.protobuf.RpcController;
 import java.io.IOException;
-import java.util.Map;
 import java.util.Optional;
 import org.apache.hadoop.hbase.CoprocessorEnvironment;
 import org.apache.hadoop.hbase.TableName;
@@ -63,11 +62,11 @@ public class OpenPolicyAgentAccessController
             authorizationEnabled,
             env.getConfiguration().get(OPA_POLICY_URL_PROP),
             dryRun,
-            useCache);
+            useCache ? Optional.of(new OpaAclChecker.CacheConfig(60, 1000)) : Optional.empty());
   }
 
-  public Map<String, Map<TableName, Map<Action, Boolean>>> getAclCache() {
-    return opaAclChecker.getAclCache();
+  public Optional<Long> getAclCacheSize() {
+    return opaAclChecker.getAclCacheSize();
   }
 
   private User getActiveUser(ObserverContext<?> ctx) throws IOException {

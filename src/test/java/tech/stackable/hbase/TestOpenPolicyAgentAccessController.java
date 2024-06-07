@@ -9,9 +9,11 @@ import static org.junit.Assert.fail;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.HTableDescriptor;
-import org.apache.hadoop.hbase.client.*;
+import org.apache.hadoop.hbase.client.Put;
+import org.apache.hadoop.hbase.client.Table;
 import org.apache.hadoop.hbase.coprocessor.ObserverContextImpl;
 import org.apache.hadoop.hbase.master.MasterCoprocessorHost;
 import org.apache.hadoop.hbase.security.User;
@@ -161,10 +163,9 @@ public class TestOpenPolicyAgentAccessController extends TestUtils {
       fail("AccessControlException should have been thrown");
     }
 
-    // ...which we can then inspect
-    LOG.info("OPA cache entries: {}", getOpaController().getAclCache().entrySet());
     // we should have only a single entry for this user as subsequent calls will hit the cache
-    assertEquals(1, getOpaController().getAclCache().get("useCacheUser").entrySet().size());
+    assertEquals(Optional.of(1L), getOpaController().getAclCacheSize());
+
     tearDown();
   }
 
