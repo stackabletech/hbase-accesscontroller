@@ -38,12 +38,18 @@ public class OpenPolicyAgentAccessController
   public static final String OPA_POLICY_DRYRUN = "hbase.security.authorization.opa.policy.dryrun";
   public static final String OPA_POLICY_CACHE =
       "hbase.security.authorization.opa.policy.cache.active";
+  public static final String OPA_POLICY_CACHE_TTL_SECONDS =
+      "hbase.security.authorization.opa.policy.cache.seconds";
+  public static final String OPA_POLICY_CACHE_TTL_SIZE =
+      "hbase.security.authorization.opa.policy.cache.size";
 
   @Override
   public void start(CoprocessorEnvironment env) {
     boolean authorizationEnabled = AccessChecker.isAuthorizationSupported(env.getConfiguration());
     boolean dryRun = env.getConfiguration().getBoolean(OPA_POLICY_DRYRUN, false);
     boolean useCache = env.getConfiguration().getBoolean(OPA_POLICY_CACHE, false);
+    int cacheTtlSeconds = env.getConfiguration().getInt(OPA_POLICY_CACHE_TTL_SECONDS, 60);
+    long cacheTtlSize = env.getConfiguration().getLong(OPA_POLICY_CACHE_TTL_SIZE, 1000);
 
     if (!authorizationEnabled) {
       LOG.warn(
@@ -62,7 +68,7 @@ public class OpenPolicyAgentAccessController
             authorizationEnabled,
             env.getConfiguration().get(OPA_POLICY_URL_PROP),
             dryRun,
-            useCache ? Optional.of(new OpaAclChecker.CacheConfig(60, 1000)) : Optional.empty());
+            new OpaAclChecker.CacheConfig(useCache, cacheTtlSeconds, cacheTtlSize));
   }
 
   public Optional<Long> getAclCacheSize() {

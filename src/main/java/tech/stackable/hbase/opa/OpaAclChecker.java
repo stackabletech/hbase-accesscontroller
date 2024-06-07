@@ -31,32 +31,33 @@ public class OpaAclChecker {
   private URI opaUri;
   private final ObjectMapper json;
 
+  @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
   private final Optional<Cache<String, Boolean>> aclCache;
 
   public static class CacheConfig {
+    public boolean enabled;
     public final int ttlSeconds;
     public final long maxSize;
 
-    public CacheConfig(int ttlSeconds, int maxSize) {
+    public CacheConfig(boolean enabled, int ttlSeconds, long maxSize) {
+      this.enabled = enabled;
       this.ttlSeconds = ttlSeconds;
       this.maxSize = maxSize;
     }
   }
 
   public OpaAclChecker(
-      boolean authorizationEnabled,
-      String opaPolicyUrl,
-      boolean dryRun,
-      Optional<CacheConfig> cacheConfigOpt) {
+      boolean authorizationEnabled, String opaPolicyUrl, boolean dryRun, CacheConfig cc) {
     this.authorizationEnabled = authorizationEnabled;
     this.dryRun = dryRun;
     this.aclCache =
-        cacheConfigOpt.map(
-            cc ->
+        cc.enabled
+            ? Optional.of(
                 Caffeine.newBuilder()
                     .expireAfterWrite(cc.ttlSeconds, TimeUnit.SECONDS)
                     .maximumSize(cc.maxSize)
-                    .build());
+                    .build())
+            : Optional.empty();
 
     this.json =
         new ObjectMapper()
@@ -174,6 +175,6 @@ public class OpaAclChecker {
   }
 
   public Optional<Long> getAclCacheSize() {
-    return aclCache.map(ac -> ac.estimatedSize());
+    return aclCache.map(Cache::estimatedSize);
   }
 }
