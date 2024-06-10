@@ -175,13 +175,18 @@ public class OpenPolicyAgentAccessController
   public void grant(
       RpcController controller,
       AccessControlProtos.GrantRequest request,
-      RpcCallback<AccessControlProtos.GrantResponse> done) {}
+      RpcCallback<AccessControlProtos.GrantResponse> done) {
+    LOG.info("grant for {}/{}", request.getUserPermission().getUser(), request.getUserPermission());
+  }
 
   @Override
   public void revoke(
       RpcController controller,
       AccessControlProtos.RevokeRequest request,
-      RpcCallback<AccessControlProtos.RevokeResponse> done) {}
+      RpcCallback<AccessControlProtos.RevokeResponse> done) {
+    LOG.info(
+        "revoke for {}/{}", request.getUserPermission().getUser(), request.getUserPermission());
+  }
 
   @Override
   public void getUserPermissions(

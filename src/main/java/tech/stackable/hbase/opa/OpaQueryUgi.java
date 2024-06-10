@@ -1,5 +1,6 @@
 package tech.stackable.hbase.opa;
 
+import com.google.common.collect.Lists;
 import java.util.List;
 import org.apache.hadoop.security.UserGroupInformation;
 
@@ -35,8 +36,9 @@ public class OpaQueryUgi {
     // groups will be managed in opa rego rules so do not attempt to have
     // this set by e.g. ugi.getPrimaryGroupName() -> ShellBasedUnixGroupsMapping
     this.primaryGroup = null;
+    // ditto here: use an empty list instead of using ugi.getGroups()
+    this.groups = Lists.newArrayList();
 
-    this.groups = ugi.getGroups();
     this.authenticationMethod = ugi.getAuthenticationMethod();
     this.realAuthenticationMethod = ugi.getRealAuthenticationMethod();
   }
