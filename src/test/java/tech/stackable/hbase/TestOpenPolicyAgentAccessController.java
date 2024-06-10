@@ -135,7 +135,7 @@ public class TestOpenPolicyAgentAccessController extends TestUtils {
       userDenied.runAs(createTable);
       LOG.info("Action runs as expected due to being in dryRun mode");
     } catch (AccessControlException e) {
-      fail("AccessControlException should have been thrown");
+      throw new AssertionError("AccessControlException should not have been thrown", e);
     }
 
     tearDown();
@@ -160,7 +160,7 @@ public class TestOpenPolicyAgentAccessController extends TestUtils {
     try {
       userDenied.runAs(createTable);
     } catch (AccessControlException e) {
-      fail("AccessControlException should have been thrown");
+      throw new AssertionError("AccessControlException should not have been thrown", e);
     }
 
     // we should have only a single entry for this user as subsequent calls will hit the cache

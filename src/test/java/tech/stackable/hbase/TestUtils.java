@@ -133,8 +133,6 @@ public class TestUtils {
     CP_ENV =
         masterCpHost.createEnvironment(
             MASTER_ACCESS_CONTROLLER, Coprocessor.PRIORITY_HIGHEST, 1, conf);
-    RegionServerCoprocessorHost rsCpHost =
-        TEST_UTIL.getMiniHBaseCluster().getRegionServer(0).getRegionServerCoprocessorHost();
 
     if (usesAclTable) {
       TEST_UTIL.waitUntilAllRegionsAssigned(PermissionStorage.ACL_TABLE_NAME);
