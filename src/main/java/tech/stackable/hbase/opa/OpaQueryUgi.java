@@ -1,6 +1,5 @@
 package tech.stackable.hbase.opa;
 
-import java.io.IOException;
 import java.util.List;
 import org.apache.hadoop.security.UserGroupInformation;
 
@@ -32,11 +31,11 @@ public class OpaQueryUgi {
     }
     this.userName = ugi.getUserName();
     this.shortUserName = ugi.getShortUserName();
-    try {
-      this.primaryGroup = ugi.getPrimaryGroupName();
-    } catch (IOException e) {
-      this.primaryGroup = null;
-    }
+
+    // groups will be managed in opa rego rules so do not attempt to have
+    // this set by e.g. ugi.getPrimaryGroupName() -> ShellBasedUnixGroupsMapping
+    this.primaryGroup = null;
+
     this.groups = ugi.getGroups();
     this.authenticationMethod = ugi.getAuthenticationMethod();
     this.realAuthenticationMethod = ugi.getRealAuthenticationMethod();
