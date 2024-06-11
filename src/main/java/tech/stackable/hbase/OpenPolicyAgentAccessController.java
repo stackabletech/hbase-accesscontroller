@@ -3,12 +3,16 @@ package tech.stackable.hbase;
 import com.google.protobuf.RpcCallback;
 import com.google.protobuf.RpcController;
 import java.io.IOException;
+import java.util.List;
 import java.util.Optional;
+import org.apache.hadoop.hbase.Cell;
 import org.apache.hadoop.hbase.CoprocessorEnvironment;
+import org.apache.hadoop.hbase.NamespaceDescriptor;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.*;
 import org.apache.hadoop.hbase.coprocessor.*;
 import org.apache.hadoop.hbase.protobuf.generated.AccessControlProtos;
+import org.apache.hadoop.hbase.regionserver.Region;
 import org.apache.hadoop.hbase.security.User;
 import org.apache.hadoop.hbase.security.UserProvider;
 import org.apache.hadoop.hbase.security.access.AccessChecker;
@@ -85,6 +89,46 @@ public class OpenPolicyAgentAccessController
   }
 
   @Override
+  public void preCreateNamespace(
+      ObserverContext<MasterCoprocessorEnvironment> c, NamespaceDescriptor ns) throws IOException {
+    User user = getActiveUser(c);
+    LOG.info("preCreateNamespace: user [{}]", user);
+    opaAclChecker.checkPermissionInfo(user, ns.getName(), Action.ADMIN);
+  }
+
+  @Override
+  public void preDeleteNamespace(ObserverContext<MasterCoprocessorEnvironment> c, String namespace)
+      throws IOException {
+    User user = getActiveUser(c);
+    LOG.info("preDeleteNamespace: user [{}]", user);
+    opaAclChecker.checkPermissionInfo(user, namespace, Action.ADMIN);
+  }
+
+  @Override
+  public void preModifyNamespace(
+      ObserverContext<MasterCoprocessorEnvironment> c, NamespaceDescriptor ns) throws IOException {
+    User user = getActiveUser(c);
+    LOG.info("preDeleteNamespace: user [{}]", user);
+    opaAclChecker.checkPermissionInfo(user, ns.getName(), Action.ADMIN);
+  }
+
+  @Override
+  public void preGetNamespaceDescriptor(
+      ObserverContext<MasterCoprocessorEnvironment> c, String namespace) throws IOException {
+    User user = getActiveUser(c);
+    LOG.info("preDeleteNamespace: user [{}]", user);
+    opaAclChecker.checkPermissionInfo(user, namespace, Action.ADMIN);
+  }
+
+  @Override
+  public void postListNamespaces(
+      ObserverContext<MasterCoprocessorEnvironment> c, List<String> namespaces) throws IOException {
+    User user = getActiveUser(c);
+    LOG.info("postListNamespaces: user [{}]", user);
+    /* always allow namespace listing */
+  }
+
+  @Override
   public void preCreateTable(
       ObserverContext<MasterCoprocessorEnvironment> c, TableDescriptor desc, RegionInfo[] regions)
       throws IOException {
@@ -126,6 +170,34 @@ public class OpenPolicyAgentAccessController
     i.e. we do not need this if we are managing permissions in Opa.
      */
     LOG.info("postDeleteTable: not implemented!");
+  }
+
+  @Override
+  public void preGetOp(
+      final ObserverContext<RegionCoprocessorEnvironment> c, final Get get, final List<Cell> result)
+      throws IOException {
+    User user = getActiveUser(c);
+    LOG.info("preGetOp: user [{}]", user);
+
+    opaAclChecker.checkPermissionInfo(
+        user, getRegion(c.getEnvironment()).getTableDescriptor().getTableName(), Action.READ);
+  }
+
+  private Region getRegion(RegionCoprocessorEnvironment e) {
+    return e.getRegion();
+  }
+
+  @Override
+  public boolean preExists(
+      final ObserverContext<RegionCoprocessorEnvironment> c, final Get get, final boolean exists)
+      throws IOException {
+    ;
+    User user = getActiveUser(c);
+    LOG.info("preExists: user [{}]", user);
+
+    opaAclChecker.checkPermissionInfo(
+        user, getRegion(c.getEnvironment()).getTableDescriptor().getTableName(), Action.READ);
+    return exists;
   }
 
   @Override

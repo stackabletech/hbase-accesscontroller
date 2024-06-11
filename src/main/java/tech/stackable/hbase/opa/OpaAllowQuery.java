@@ -14,6 +14,7 @@ public class OpaAllowQuery {
   public static class OpaAllowQueryInput {
     public final OpaQueryUgi callerUgi;
     public final TableName table;
+    public final String namespace;
     public final Permission.Action action;
 
     public OpaAllowQueryInput(UserGroupInformation ugi, TableName table, Permission.Action action) {
@@ -21,6 +22,16 @@ public class OpaAllowQuery {
 
       this.table = table;
       this.action = action;
+      this.namespace = table.getNamespaceAsString();
+    }
+
+    public OpaAllowQueryInput(
+        UserGroupInformation ugi, String namespace, Permission.Action action) {
+      this.callerUgi = new OpaQueryUgi(ugi);
+
+      this.table = null;
+      this.action = action;
+      this.namespace = namespace;
     }
   }
 }

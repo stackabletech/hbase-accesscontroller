@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Optional;
 import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.HTableDescriptor;
+import org.apache.hadoop.hbase.NamespaceDescriptor;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Table;
 import org.apache.hadoop.hbase.coprocessor.ObserverContextImpl;
@@ -70,7 +71,7 @@ public class TestOpenPolicyAgentAccessController extends TestUtils {
       createTable(TEST_UTIL, TEST_UTIL.getAdmin(), htd, new byte[][] {Bytes.toBytes("s")});
       fail("AccessControlException should have been thrown");
     } catch (AccessControlException e) {
-      LOG.info("AccessControlException as expected: [{}]", e.getMessage());
+      logOk(e);
     }
 
     tearDown();
@@ -103,7 +104,7 @@ public class TestOpenPolicyAgentAccessController extends TestUtils {
       userDenied.runAs(createTable);
       fail("AccessControlException should have been thrown");
     } catch (AccessControlException e) {
-      LOG.info("AccessControlException as expected: [{}]", e.getMessage());
+      logOk(e);
     }
 
     tearDown();
@@ -167,6 +168,47 @@ public class TestOpenPolicyAgentAccessController extends TestUtils {
     assertEquals(Optional.of(1L), getOpaController().getAclCacheSize());
 
     tearDown();
+  }
+
+  @Test
+  public void testCreateNamespace() throws Exception {
+    stubFor(post("/").willReturn(ok().withBody("{\"result\": \"true\"}")));
+    setup(OpenPolicyAgentAccessController.class, false, OPA_URL, false, false);
+
+    User userCreater = User.createUserForTesting(conf, "nsCreator", new String[0]);
+    User userDenied = User.createUserForTesting(conf, "nsNonCreator", new String[0]);
+
+    SecureTestUtil.AccessTestAction createNamespace =
+        () -> {
+          NamespaceDescriptor nsd = NamespaceDescriptor.create("new_ns").build();
+          getOpaController().preCreateNamespace(ObserverContextImpl.createAndPrepare(CP_ENV), nsd);
+          return null;
+        };
+
+    try {
+      userCreater.runAs(createNamespace);
+    } catch (AccessControlException e) {
+      throw new AssertionError("AccessControlException should not have been thrown", e);
+    }
+
+    // re-stub so that the call would fail for the given user in *non*-dryRun mode
+    stubFor(
+        post("/")
+            .withRequestBody(matchingJsonPath("$.input.callerUgi[?(@.userName == 'nsNonCreator')]"))
+            .willReturn(ok().withBody("{\"result\": \"false\"}")));
+
+    try {
+      userDenied.runAs(createNamespace);
+      fail("AccessControlException should have been thrown");
+    } catch (AccessControlException e) {
+      logOk(e);
+    }
+
+    tearDown();
+  }
+
+  private static void logOk(AccessControlException e) {
+    LOG.info("AccessControlException as expected: [{}]", e.getMessage());
   }
 
   private static HTableDescriptor getHTableDescriptor() {

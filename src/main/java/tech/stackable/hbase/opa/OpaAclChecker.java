@@ -82,12 +82,22 @@ public class OpaAclChecker {
 
   public void checkPermissionInfo(User user, TableName table, Permission.Action action)
       throws AccessControlException {
+    OpaAllowQuery query =
+        new OpaAllowQuery(new OpaAllowQuery.OpaAllowQueryInput(user.getUGI(), table, action));
+    this.checkPermissionInfo(query);
+  }
+
+  public void checkPermissionInfo(User user, String namespace, Permission.Action action)
+      throws AccessControlException {
+    OpaAllowQuery query =
+        new OpaAllowQuery(new OpaAllowQuery.OpaAllowQueryInput(user.getUGI(), namespace, action));
+    this.checkPermissionInfo(query);
+  }
+
+  public void checkPermissionInfo(OpaAllowQuery query) throws AccessControlException {
     if (!this.authorizationEnabled) {
       return;
     }
-
-    OpaAllowQuery query =
-        new OpaAllowQuery(new OpaAllowQuery.OpaAllowQueryInput(user.getUGI(), table, action));
 
     String body;
     try {
