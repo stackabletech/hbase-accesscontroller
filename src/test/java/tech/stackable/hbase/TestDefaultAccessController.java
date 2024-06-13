@@ -20,6 +20,11 @@ import org.apache.hadoop.hbase.security.access.*;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.junit.Test;
 
+/**
+ * This class copies selected test cases from the HBase code so that it is easier to step-through
+ * the default co-processor code to see how it is used. It can be removed entirely once the
+ * implementation has stabilised.
+ */
 public class TestDefaultAccessController extends TestUtils {
 
   @Test
@@ -27,9 +32,7 @@ public class TestDefaultAccessController extends TestUtils {
     setup(AccessController.class, true, null);
     setUpTables();
 
-    Connection conn = null;
-    try {
-      conn = ConnectionFactory.createConnection(conf);
+    try (Connection conn = ConnectionFactory.createConnection(conf)) {
       User nSUser1 = User.createUserForTesting(conf, "nsuser1", new String[0]);
       User nSUser2 = User.createUserForTesting(conf, "nsuser2", new String[0]);
       User nSUser3 = User.createUserForTesting(conf, "nsuser3", new String[0]);
@@ -190,10 +193,6 @@ public class TestDefaultAccessController extends TestUtils {
       deleteTable(TEST_UTIL, table2);
       deleteNamespace(TEST_UTIL, namespace1);
       deleteNamespace(TEST_UTIL, namespace2);
-    } finally {
-      if (conn != null) {
-        conn.close();
-      }
     }
     cleanUpTables();
     tearDown();
@@ -204,9 +203,7 @@ public class TestDefaultAccessController extends TestUtils {
     setup(AccessController.class, true, null);
     setUpTables();
 
-    Connection conn = null;
-    try {
-      conn = ConnectionFactory.createConnection(conf);
+    try (Connection conn = ConnectionFactory.createConnection(conf)) {
       // Create user and set namespace ACL
       User user1 = User.createUserForTesting(conf, "testHasPermissionUser1", new String[0]);
       // Grant namespace permission
@@ -234,45 +231,40 @@ public class TestDefaultAccessController extends TestUtils {
 
       // Verify action privilege
       AccessTestAction hasPermissionActionCP =
-          new AccessTestAction() {
-            @Override
-            public Object run() throws Exception {
-              try (Connection conn = ConnectionFactory.createConnection(conf);
-                  Table acl = conn.getTable(PermissionStorage.ACL_TABLE_NAME)) {
-                BlockingRpcChannel service = acl.coprocessorService(TEST_TABLE.getName());
-                AccessControlProtos.AccessControlService.BlockingInterface protocol =
-                    AccessControlProtos.AccessControlService.newBlockingStub(service);
-                Permission.Action[] actions = {Permission.Action.READ, Permission.Action.WRITE};
-                AccessControlUtil.hasPermission(
-                    null,
-                    protocol,
-                    TEST_TABLE,
-                    TEST_FAMILY,
-                    HConstants.EMPTY_BYTE_ARRAY,
-                    "dummy",
-                    actions);
-              }
-              return null;
+          () -> {
+            try (Connection conn1 = ConnectionFactory.createConnection(conf);
+                Table acl = conn1.getTable(PermissionStorage.ACL_TABLE_NAME)) {
+              BlockingRpcChannel service = acl.coprocessorService(TEST_TABLE.getName());
+              AccessControlProtos.AccessControlService.BlockingInterface protocol =
+                  AccessControlProtos.AccessControlService.newBlockingStub(service);
+              Permission.Action[] actions = {Permission.Action.READ, Permission.Action.WRITE};
+              AccessControlUtil.hasPermission(
+                  null,
+                  protocol,
+                  TEST_TABLE,
+                  TEST_FAMILY,
+                  HConstants.EMPTY_BYTE_ARRAY,
+                  "dummy",
+                  actions);
             }
+            return null;
           };
       AccessTestAction hasPermissionAction =
-          new AccessTestAction() {
-            @Override
-            public Object run() throws Exception {
-              try (Connection conn = ConnectionFactory.createConnection(conf)) {
-                Permission.Action[] actions = {Permission.Action.READ, Permission.Action.WRITE};
-                conn.getAdmin()
-                    .hasUserPermissions(
-                        "dummy",
-                        Arrays.asList(
-                            Permission.newBuilder(TEST_TABLE)
-                                .withFamily(TEST_FAMILY)
-                                .withQualifier(HConstants.EMPTY_BYTE_ARRAY)
-                                .withActions(actions)
-                                .build()));
-              }
-              return null;
+          () -> {
+            try (Connection conn12 = ConnectionFactory.createConnection(conf)) {
+              Permission.Action[] actions = {Permission.Action.READ, Permission.Action.WRITE};
+              conn12
+                  .getAdmin()
+                  .hasUserPermissions(
+                      "dummy",
+                      Arrays.asList(
+                          Permission.newBuilder(TEST_TABLE)
+                              .withFamily(TEST_FAMILY)
+                              .withQualifier(HConstants.EMPTY_BYTE_ARRAY)
+                              .withActions(actions)
+                              .build()));
             }
+            return null;
           };
       verifyAllowed(
           hasPermissionActionCP,
@@ -494,10 +486,6 @@ public class TestDefaultAccessController extends TestUtils {
           TEST_QUALIFIER,
           Permission.Action.READ,
           Permission.Action.WRITE);
-    } finally {
-      if (conn != null) {
-        conn.close();
-      }
     }
     cleanUpTables();
     tearDown();

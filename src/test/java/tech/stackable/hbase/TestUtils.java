@@ -64,11 +64,13 @@ public class TestUtils {
   protected static User USER_GROUP_READ;
   protected static User USER_GROUP_WRITE;
 
+  @SuppressWarnings("rawtypes")
   protected static void setup(Class accessControllerClass, boolean usesAclTable, String opaUrl)
       throws Exception {
     setup(accessControllerClass, usesAclTable, opaUrl, false, false);
   }
 
+  @SuppressWarnings("rawtypes")
   protected static void setup(
       Class accessControllerClass,
       boolean usesAclTable,

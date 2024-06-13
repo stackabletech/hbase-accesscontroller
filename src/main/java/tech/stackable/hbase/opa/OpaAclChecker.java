@@ -35,7 +35,7 @@ public class OpaAclChecker {
   private final Optional<Cache<String, Boolean>> aclCache;
 
   public static class CacheConfig {
-    public boolean enabled;
+    public final boolean enabled;
     public final int ttlSeconds;
     public final long maxSize;
 

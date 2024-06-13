@@ -12,7 +12,6 @@ import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.*;
 import org.apache.hadoop.hbase.coprocessor.*;
 import org.apache.hadoop.hbase.protobuf.generated.AccessControlProtos;
-import org.apache.hadoop.hbase.regionserver.Region;
 import org.apache.hadoop.hbase.security.User;
 import org.apache.hadoop.hbase.security.UserProvider;
 import org.apache.hadoop.hbase.security.access.AccessChecker;
@@ -108,7 +107,7 @@ public class OpenPolicyAgentAccessController
   public void preModifyNamespace(
       ObserverContext<MasterCoprocessorEnvironment> c, NamespaceDescriptor ns) throws IOException {
     User user = getActiveUser(c);
-    LOG.info("preDeleteNamespace: user [{}]", user);
+    LOG.info("preModifyNamespace: user [{}]", user);
     opaAclChecker.checkPermissionInfo(user, ns.getName(), Action.ADMIN);
   }
 
@@ -116,7 +115,7 @@ public class OpenPolicyAgentAccessController
   public void preGetNamespaceDescriptor(
       ObserverContext<MasterCoprocessorEnvironment> c, String namespace) throws IOException {
     User user = getActiveUser(c);
-    LOG.info("preDeleteNamespace: user [{}]", user);
+    LOG.info("preGetNamespaceDescriptor: user [{}]", user);
     opaAclChecker.checkPermissionInfo(user, namespace, Action.ADMIN);
   }
 
@@ -177,27 +176,44 @@ public class OpenPolicyAgentAccessController
       final ObserverContext<RegionCoprocessorEnvironment> c, final Get get, final List<Cell> result)
       throws IOException {
     User user = getActiveUser(c);
-    LOG.info("preGetOp: user [{}]", user);
+    TableName tableName = c.getEnvironment().getRegionInfo().getTable();
+    // All users need read access to hbase:meta table.
+    if (TableName.META_TABLE_NAME.equals(tableName)) {
+      return;
+    }
+    LOG.info("preGetOp: user [{}] on table [{}] with get [{}]", user, tableName, get);
 
-    opaAclChecker.checkPermissionInfo(
-        user, getRegion(c.getEnvironment()).getTableDescriptor().getTableName(), Action.READ);
-  }
-
-  private Region getRegion(RegionCoprocessorEnvironment e) {
-    return e.getRegion();
+    opaAclChecker.checkPermissionInfo(user, tableName, Action.READ);
   }
 
   @Override
   public boolean preExists(
       final ObserverContext<RegionCoprocessorEnvironment> c, final Get get, final boolean exists)
       throws IOException {
-    ;
     User user = getActiveUser(c);
-    LOG.info("preExists: user [{}]", user);
+    TableName tableName = c.getEnvironment().getRegionInfo().getTable();
+    // All users need read access to hbase:meta table.
+    if (TableName.META_TABLE_NAME.equals(tableName)) {
+      return exists;
+    }
+    LOG.info("preExists: user [{}] on table [{}] with get [{}]", user, tableName, get);
 
-    opaAclChecker.checkPermissionInfo(
-        user, getRegion(c.getEnvironment()).getTableDescriptor().getTableName(), Action.READ);
+    opaAclChecker.checkPermissionInfo(user, tableName, Action.READ);
     return exists;
+  }
+
+  @Override
+  public void preScannerOpen(final ObserverContext<RegionCoprocessorEnvironment> c, final Scan scan)
+      throws IOException {
+    User user = getActiveUser(c);
+    TableName tableName = c.getEnvironment().getRegionInfo().getTable();
+    // All users need read access to hbase:meta table.
+    if (TableName.META_TABLE_NAME.equals(tableName)) {
+      return;
+    }
+    LOG.info("preScannerOpen: user [{}] on table [{}] with scan [{}]", user, tableName, scan);
+
+    opaAclChecker.checkPermissionInfo(user, tableName, Action.READ);
   }
 
   @Override
@@ -208,10 +224,10 @@ public class OpenPolicyAgentAccessController
       final Durability durability)
       throws IOException {
     User user = getActiveUser(c);
-    LOG.info("prePut: user [{}]", user);
+    TableName tableName = c.getEnvironment().getRegionInfo().getTable();
+    LOG.info("prePut: user [{}] on table [{}] with put [{}]", user, tableName, put);
 
-    opaAclChecker.checkPermissionInfo(
-        user, c.getEnvironment().getRegion().getRegionInfo().getTable(), Action.WRITE);
+    opaAclChecker.checkPermissionInfo(user, tableName, Action.WRITE);
   }
 
   @Override
@@ -222,22 +238,22 @@ public class OpenPolicyAgentAccessController
       final Durability durability)
       throws IOException {
     User user = getActiveUser(c);
-    LOG.info("preDelete: user [{}]", user);
+    TableName tableName = c.getEnvironment().getRegionInfo().getTable();
+    LOG.info("preDelete: user [{}] on table [{}] with delete [{}]", user, tableName, delete);
 
     // the default access controller uses a second enum - OpType - to distinguish between
     // different types of write action (e.g. write, delete)
-    opaAclChecker.checkPermissionInfo(
-        user, c.getEnvironment().getRegion().getRegionInfo().getTable(), Action.WRITE);
+    opaAclChecker.checkPermissionInfo(user, tableName, Action.WRITE);
   }
 
   @Override
   public Result preAppend(ObserverContext<RegionCoprocessorEnvironment> c, Append append)
       throws IOException {
     User user = getActiveUser(c);
-    LOG.info("preAppend: user [{}]", user);
+    TableName tableName = c.getEnvironment().getRegionInfo().getTable();
+    LOG.info("preAppend: user [{}] on table [{}] with append [{}]", user, tableName, append);
 
-    opaAclChecker.checkPermissionInfo(
-        user, c.getEnvironment().getRegion().getRegionInfo().getTable(), Action.WRITE);
+    opaAclChecker.checkPermissionInfo(user, tableName, Action.WRITE);
 
     // as per default access controller
     return null;

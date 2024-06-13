@@ -10,7 +10,7 @@ public class OpaQueryUgi {
   public final String userName;
   public final String shortUserName;
 
-  public String primaryGroup;
+  public final String primaryGroup;
   public final List<String> groups;
 
   public final UserGroupInformation.AuthenticationMethod authenticationMethod;
