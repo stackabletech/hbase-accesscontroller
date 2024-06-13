@@ -54,7 +54,7 @@ For every action a request similar to the one below is sent to OPA. The importan
 }
 ```
 
-OPA needs to respond with either (in the case of the latter an exception is thrown which is caught and handled internally):
+OPA will respond with one of the following (in the case of the latter an exception is thrown which is caught and handled internally):
 
 ```json
 {"result":true}
