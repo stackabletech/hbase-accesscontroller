@@ -16,7 +16,7 @@ The CoProcessor is built from source and included in the Stackable Apache HBase 
 ### Configuration
 
 The CoProcessor is only loaded and used by the HBase operator when it is declared in the product CRD.
-See the HBase operator documentation for more details.
+See the [HBase operator documentation](https://docs.stackable.tech/home/stable/hbase/reference/crds) for more details.
 
 ### API
 
