@@ -84,14 +84,14 @@ The following actions are subject to ACL checks:
 - creation, modification and deletion of namespaces
 - reading a namespace descriptor
 - creation and deletion of tables
-- enabling and disabling of tables
+- enabling and disabling of 
+- truncation and modification of tables
 - reading data (`Get`, `Scan`)
 - writing data (`Put`, `Append`, `Delete`)
 - batch mutations
 
 The following actions are currently excluded but will be included in future releases:
 
-- truncation and modification of tables
 - modification of store file trackers (table, column family)
 - moving, assigning and unassigning tables
 - snapshot operations (create, list, clone, restore, delete)
