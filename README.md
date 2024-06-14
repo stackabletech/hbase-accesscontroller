@@ -6,6 +6,7 @@ This project contains a custom HBase CoProcessor for Apache HBase, which is inte
 It implements authorization by making calls to ACLs defined in rego rules delivered by an OpenPolicyAgent (OPA) server in Kubernetes.
 
 ## Installation
+
 The CoProcessor is built from source and included in the Stackable Apache HBase product image automatically.
 
 ## OPA authorizer
@@ -83,16 +84,16 @@ The following actions are subject to ACL checks:
 - creation, modification and deletion of namespaces
 - reading a namespace descriptor
 - creation and deletion of tables
+- enabling and disabling of tables
 - reading data (`Get`, `Scan`)
 - writing data (`Put`, `Append`, `Delete`)
+- batch mutations
 
 The following actions are currently excluded but will be included in future releases:
 
 - truncation and modification of tables
 - modification of store file trackers (table, column family)
-- enabling and disabling of tables
 - moving, assigning and unassigning tables
-- batch mutations
-- master server operations (stop/start, taking regions offline, splitting and balancing regions, shutdown)
 - snapshot operations (create, list, clone, restore, delete)
 - bulk loading of HFiles
+

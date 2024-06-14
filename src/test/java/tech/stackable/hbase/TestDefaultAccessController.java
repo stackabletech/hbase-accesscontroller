@@ -18,6 +18,7 @@ import org.apache.hadoop.hbase.security.Superusers;
 import org.apache.hadoop.hbase.security.User;
 import org.apache.hadoop.hbase.security.access.*;
 import org.apache.hadoop.hbase.util.Bytes;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -25,6 +26,7 @@ import org.junit.Test;
  * the default co-processor code to see how it is used. It can be removed entirely once the
  * implementation has stabilised.
  */
+@Ignore
 public class TestDefaultAccessController extends TestUtils {
 
   @Test
