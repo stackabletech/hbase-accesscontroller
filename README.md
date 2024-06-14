@@ -18,6 +18,16 @@ The CoProcessor is built from source and included in the Stackable Apache HBase 
 The CoProcessor is only loaded and used by the HBase operator when it is declared in the product CRD.
 See the [HBase operator documentation](https://docs.stackable.tech/home/stable/hbase/reference/crds) for more details.
 
+The following configuration options are expected in `hbase-site.xml`:
+
+- `hbase.security.authorization.opa.policy.url` : OPA endpoint URL
+- `hbase.security.authorization.opa.policy.dryrun` : In dry-run mode no requests are sent to OPA.
+- `hbase.security.authorization.opa.policy.cache.active` : Enable caching of policy decisions.
+- `hbase.security.authorization.opa.policy.cache.seconds` : TTL of policy decisions in seconds.
+- `hbase.security.authorization.opa.policy.cache.size` : Policy decision cache size.
+
+The Stackable HBase operator configures these options automatically.
+
 ### API
 
 For every action a request similar to the one below is sent to OPA. The important parts of this request are:
