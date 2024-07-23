@@ -159,9 +159,8 @@ public class OpenPolicyAgentAccessController
       final TableDescriptor desc,
       final RegionInfo[] regions) {
     /*
-    The default AccessController uses this method to check on the existence of the ACL table
-    and to switch from the current user to the real hbase master user for doing the RPC on the ACL table.
-    i.e. we do not need this if we are managing permissions in Opa.
+    The default AccessController uses this method to update the permissions for the newly created table 
+    in the internal ACL table. We do not need this as we are managing permissions in OPA.
      */
   }
 
