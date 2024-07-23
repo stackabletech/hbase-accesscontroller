@@ -2,7 +2,7 @@
 
 [Stackable Data Platform](https://stackable.tech/) | [Platform Docs](https://docs.stackable.tech/) | [Discussions](https://github.com/orgs/stackabletech/discussions) | [Discord](https://discord.gg/7kZ3BNnCAF)
 
-This project contains a custom HBase CoProcessor for Apache HBase, which is intended to be used with the [Stackable Data Platform](https://stackable.tech).
+This project contains a custom HBase coprocessor for Apache HBase, which is intended to be used with the [Stackable Data Platform](https://stackable.tech).
 It implements authorization by making calls to ACLs defined in rego rules delivered by an OpenPolicyAgent (OPA) server in Kubernetes.
 
 ## Installation
