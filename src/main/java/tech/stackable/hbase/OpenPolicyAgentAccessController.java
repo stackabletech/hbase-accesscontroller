@@ -61,7 +61,7 @@ public class OpenPolicyAgentAccessController
       "hbase.security.authorization.opa.policy.cache.size";
 
   // Mapping of scanner instances to the user who created them
-  private Map<InternalScanner, String> scannerOwners = new MapMaker().weakKeys().makeMap();
+  private final Map<InternalScanner, String> scannerOwners = new MapMaker().weakKeys().makeMap();
 
   @Override
   public void start(CoprocessorEnvironment env) {
