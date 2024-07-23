@@ -945,7 +945,7 @@ public class OpenPolicyAgentAccessController
 
   @Override
   public void preStopMaster(ObserverContext<MasterCoprocessorEnvironment> c) {
-    LOG.debug("preStopMaster not implemented! {}");
+    LOG.debug("preStopMaster not implemented!");
   }
 
   @Override
