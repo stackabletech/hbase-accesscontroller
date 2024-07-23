@@ -159,7 +159,7 @@ public class OpenPolicyAgentAccessController
       final TableDescriptor desc,
       final RegionInfo[] regions) {
     /*
-    The default AccessController uses this method to update the permissions for the newly created table 
+    The default AccessController uses this method to update the permissions for the newly created table
     in the internal ACL table. We do not need this as we are managing permissions in OPA.
      */
   }

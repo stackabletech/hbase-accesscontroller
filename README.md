@@ -84,7 +84,7 @@ The following actions are subject to ACL checks:
 - creation, modification and deletion of namespaces
 - reading a namespace descriptor
 - creation and deletion of tables
-- enabling and disabling of 
+- enabling and disabling of
 - truncation and modification of tables
 - reading data (`Get`, `Scan`)
 - writing data (`Put`, `Append`, `Delete`)
