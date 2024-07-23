@@ -421,7 +421,7 @@ public class OpenPolicyAgentAccessController
       throws IOException {
     User user = getActiveUser(c);
     TableName tableName = c.getEnvironment().getRegionInfo().getTable();
-    LOG.info("preCompact: user [{}] on table [{}] for scanner [{}]", user, scanner);
+    LOG.info("preCompact: user [{}] on table [{}] for scanner [{}]", user, tableName, scanner);
 
     opaAclChecker.checkPermissionInfo(user, tableName, Action.WRITE);
 
