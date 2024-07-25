@@ -216,8 +216,8 @@ public class OpenPolicyAgentAccessController
   public void postDeleteTable(
       ObserverContext<MasterCoprocessorEnvironment> c, final TableName tableName) {
     /*
-    The default AccessController uses this method to remove the permissions for the deleted table 
-    in the internal ACL table. We do not need this as we are managing permissions in OPA.    
+    The default AccessController uses this method to remove the permissions for the deleted table
+    in the internal ACL table. We do not need this as we are managing permissions in OPA.
      */
   }
 
@@ -562,7 +562,10 @@ public class OpenPolicyAgentAccessController
     User user = getActiveUser(c);
     TableName tableName = c.getEnvironment().getRegionInfo().getTable();
     LOG.trace(
-        "preCheckAndDeleteAfterRowLock: user [{}] on table [{}] for delete [{}]", user, tableName, delete);
+        "preCheckAndDeleteAfterRowLock: user [{}] on table [{}] for delete [{}]",
+        user,
+        tableName,
+        delete);
 
     opaAclChecker.checkPermissionInfo(user, tableName, Action.WRITE);
     return result;
