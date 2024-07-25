@@ -562,7 +562,7 @@ public class OpenPolicyAgentAccessController
     User user = getActiveUser(c);
     TableName tableName = c.getEnvironment().getRegionInfo().getTable();
     LOG.trace(
-        "preCheckAndDeleteAfterRowLock: user [{}] on table [{}] for delete [{}]", user, delete);
+        "preCheckAndDeleteAfterRowLock: user [{}] on table [{}] for delete [{}]", user, tableName, delete);
 
     opaAclChecker.checkPermissionInfo(user, tableName, Action.WRITE);
     return result;
