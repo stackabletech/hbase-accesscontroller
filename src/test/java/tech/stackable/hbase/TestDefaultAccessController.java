@@ -1,8 +1,22 @@
 package tech.stackable.hbase;
 
 import static org.apache.hadoop.hbase.AuthUtil.toGroupEntry;
-import static org.apache.hadoop.hbase.security.access.SecureTestUtil.*;
-import static org.junit.Assert.*;
+import static org.apache.hadoop.hbase.security.access.SecureTestUtil.AccessTestAction;
+import static org.apache.hadoop.hbase.security.access.SecureTestUtil.createNamespace;
+import static org.apache.hadoop.hbase.security.access.SecureTestUtil.deleteNamespace;
+import static org.apache.hadoop.hbase.security.access.SecureTestUtil.deleteTable;
+import static org.apache.hadoop.hbase.security.access.SecureTestUtil.grantOnNamespace;
+import static org.apache.hadoop.hbase.security.access.SecureTestUtil.grantOnNamespaceUsingAccessControlClient;
+import static org.apache.hadoop.hbase.security.access.SecureTestUtil.grantOnTable;
+import static org.apache.hadoop.hbase.security.access.SecureTestUtil.grantOnTableUsingAccessControlClient;
+import static org.apache.hadoop.hbase.security.access.SecureTestUtil.revokeFromNamespaceUsingAccessControlClient;
+import static org.apache.hadoop.hbase.security.access.SecureTestUtil.revokeFromTableUsingAccessControlClient;
+import static org.apache.hadoop.hbase.security.access.SecureTestUtil.verifyAllowed;
+import static org.apache.hadoop.hbase.security.access.SecureTestUtil.verifyDenied;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import com.google.protobuf.BlockingRpcChannel;
 import java.util.Arrays;
@@ -16,7 +30,11 @@ import org.apache.hadoop.hbase.client.Table;
 import org.apache.hadoop.hbase.protobuf.generated.AccessControlProtos;
 import org.apache.hadoop.hbase.security.Superusers;
 import org.apache.hadoop.hbase.security.User;
-import org.apache.hadoop.hbase.security.access.*;
+import org.apache.hadoop.hbase.security.access.AccessControlClient;
+import org.apache.hadoop.hbase.security.access.AccessControlUtil;
+import org.apache.hadoop.hbase.security.access.AccessController;
+import org.apache.hadoop.hbase.security.access.Permission;
+import org.apache.hadoop.hbase.security.access.PermissionStorage;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.junit.Ignore;
 import org.junit.Test;

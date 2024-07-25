@@ -1,6 +1,9 @@
 package tech.stackable.hbase;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.*;
+import static com.github.tomakehurst.wiremock.client.WireMock.matchingJsonPath;
+import static com.github.tomakehurst.wiremock.client.WireMock.ok;
+import static com.github.tomakehurst.wiremock.client.WireMock.post;
+import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static org.apache.hadoop.hbase.security.access.SecureTestUtil.createTable;
 import static org.apache.hadoop.hbase.security.access.SecureTestUtil.deleteTable;
 import static org.junit.Assert.assertEquals;
