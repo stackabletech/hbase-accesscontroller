@@ -21,11 +21,11 @@ See the [HBase operator documentation](https://docs.stackable.tech/home/stable/h
 
 The following configuration options are expected in `hbase-site.xml`:
 
-- `hbase.security.authorization.opa.policy.url` : OPA endpoint URL
-- `hbase.security.authorization.opa.policy.dryrun` : In dry-run mode no requests are sent to OPA.
-- `hbase.security.authorization.opa.policy.cache.active` : Enable caching of policy decisions.
-- `hbase.security.authorization.opa.policy.cache.seconds` : TTL of policy decisions in seconds.
-- `hbase.security.authorization.opa.policy.cache.size` : Policy decision cache size.
+- `hbase.security.authorization.opa.policy.url` : OPA endpoint URL (mandatory).
+- `hbase.security.authorization.opa.policy.dryrun` : In dry-run mode no requests are sent to OPA (default: `false`).
+- `hbase.security.authorization.opa.policy.cache.active` : Enable caching of policy decisions (default: `false`).
+- `hbase.security.authorization.opa.policy.cache.seconds` : TTL of policy decisions in seconds (default: `60`).
+- `hbase.security.authorization.opa.policy.cache.size` : Policy decision cache size (default: `1000`).
 
 The Stackable HBase operator configures these options automatically.
 
