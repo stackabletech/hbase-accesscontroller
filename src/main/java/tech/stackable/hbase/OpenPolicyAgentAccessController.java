@@ -216,9 +216,8 @@ public class OpenPolicyAgentAccessController
   public void postDeleteTable(
       ObserverContext<MasterCoprocessorEnvironment> c, final TableName tableName) {
     /*
-    The default AccessController switches from the current user to the real hbase login user
-    (User.runAsLoginUser) for updating table permissions.
-    i.e. we do not need this if we are managing permissions in Opa.
+    The default AccessController uses this method to remove the permissions for the deleted table 
+    in the internal ACL table. We do not need this as we are managing permissions in OPA.    
      */
   }
 
