@@ -116,9 +116,9 @@ public class OpaAclChecker {
       throw new OpaException.SerializeFailed(e);
     }
 
-    LOG.info("Request body:\n{}", prettyPrinted);
+    LOG.trace("Request body:\n{}", prettyPrinted);
     if (this.dryRun) {
-      LOG.info("Dry run request: omitting call.");
+      LOG.debug("Dry run request: omitting call.");
       return;
     }
 
@@ -126,7 +126,7 @@ public class OpaAclChecker {
       final Boolean result = aclCache.get().getIfPresent(body);
       if (result != null) {
         if (result) {
-          LOG.info("Permission exists in OPA-policy-cache, by-passing policy call");
+          LOG.trace("Permission exists in OPA-policy-cache, by-passing policy call");
           return;
         } else {
           throw new AccessControlException("OPA denied the request (denial already cached");
@@ -143,7 +143,7 @@ public class OpaAclChecker {
                   .POST(HttpRequest.BodyPublishers.ofString(body))
                   .build(),
               HttpResponse.BodyHandlers.ofString());
-      LOG.info("OPA response: {}", response.body());
+      LOG.trace("OPA response: {}", response.body());
     } catch (Exception e) {
       LOG.error(e.getMessage());
       throw new OpaException.QueryFailed(e);

@@ -504,7 +504,7 @@ public class OpenPolicyAgentAccessController
       throws IOException {
     User user = getActiveUser(c);
     TableName tableName = c.getEnvironment().getRegionInfo().getTable();
-    LOG.trace("preCheckAndPut: user [{}] on table [{}] for put [{}]", user, put);
+    LOG.trace("preCheckAndPut: user [{}] on table [{}] for put [{}]", user, tableName, put);
 
     opaAclChecker.checkPermissionInfo(user, tableName, Action.WRITE);
     return result;
@@ -523,7 +523,8 @@ public class OpenPolicyAgentAccessController
       throws IOException {
     User user = getActiveUser(c);
     TableName tableName = c.getEnvironment().getRegionInfo().getTable();
-    LOG.trace("preCheckAndPutAfterRowLock: user [{}] on table [{}] for put [{}]", user, put);
+    LOG.trace(
+        "preCheckAndPutAfterRowLock: user [{}] on table [{}] for put [{}]", user, tableName, put);
 
     opaAclChecker.checkPermissionInfo(user, tableName, Action.WRITE);
     return result;
@@ -542,7 +543,8 @@ public class OpenPolicyAgentAccessController
       throws IOException {
     User user = getActiveUser(c);
     TableName tableName = c.getEnvironment().getRegionInfo().getTable();
-    LOG.trace("preCheckAndDelete: user [{}] on table [{}] for delete [{}]", user, delete);
+    LOG.trace(
+        "preCheckAndDelete: user [{}] on table [{}] for delete [{}]", user, tableName, delete);
 
     opaAclChecker.checkPermissionInfo(user, tableName, Action.WRITE);
     return result;
