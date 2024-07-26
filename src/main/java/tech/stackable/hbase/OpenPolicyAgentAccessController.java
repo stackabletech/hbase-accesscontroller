@@ -51,6 +51,7 @@ import org.apache.hadoop.hbase.quotas.GlobalQuotaSettings;
 import org.apache.hadoop.hbase.regionserver.FlushLifeCycleTracker;
 import org.apache.hadoop.hbase.regionserver.InternalScanner;
 import org.apache.hadoop.hbase.regionserver.MiniBatchOperationInProgress;
+import org.apache.hadoop.hbase.regionserver.Region;
 import org.apache.hadoop.hbase.regionserver.RegionScanner;
 import org.apache.hadoop.hbase.regionserver.ScanType;
 import org.apache.hadoop.hbase.regionserver.Store;
@@ -336,6 +337,9 @@ public class OpenPolicyAgentAccessController
     scannerOwners.remove(s);
   }
 
+  /**
+   * This method is copied from the code in AccessController.
+   */
   private void requireScannerOwner(InternalScanner s) throws AccessDeniedException {
     if (!RpcServer.isInRpcCallContext()) {
       return;
@@ -418,10 +422,14 @@ public class OpenPolicyAgentAccessController
   @Override
   public void preOpen(ObserverContext<RegionCoprocessorEnvironment> c) throws IOException {
     User user = getActiveUser(c);
-    TableName tableName = c.getEnvironment().getRegionInfo().getTable();
-    LOG.trace("preOpen: user [{}] on table [{}]", user, tableName);
-
-    opaAclChecker.checkPermissionInfo(user, tableName, Action.ADMIN);
+    final Region region = c.getEnvironment().getRegion();
+    if (region == null) {
+      LOG.error("NULL region from RegionCoprocessorEnvironment in preOpen()");
+    } else {
+      TableName tableName = region.getRegionInfo().getTable();
+      LOG.trace("preOpen: user [{}] on table [{}]", user, tableName);
+      opaAclChecker.checkPermissionInfo(user, tableName, Action.ADMIN);
+    }
   }
 
   @Override
