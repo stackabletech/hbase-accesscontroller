@@ -6,6 +6,7 @@ import com.google.protobuf.RpcCallback;
 import com.google.protobuf.RpcController;
 import com.google.protobuf.Service;
 import java.io.IOException;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -16,6 +17,7 @@ import org.apache.hadoop.hbase.CoprocessorEnvironment;
 import org.apache.hadoop.hbase.NamespaceDescriptor;
 import org.apache.hadoop.hbase.ServerName;
 import org.apache.hadoop.hbase.TableName;
+import org.apache.hadoop.hbase.client.Admin;
 import org.apache.hadoop.hbase.client.Append;
 import org.apache.hadoop.hbase.client.BalanceRequest;
 import org.apache.hadoop.hbase.client.Delete;
@@ -65,6 +67,7 @@ import org.apache.hadoop.hbase.security.access.Permission.Action;
 import org.apache.hadoop.hbase.security.access.UserPermission;
 import org.apache.hadoop.hbase.util.Pair;
 import org.apache.hadoop.hbase.wal.WALEdit;
+import org.apache.hadoop.security.AccessControlException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.stackable.hbase.opa.OpaAclChecker;
@@ -470,8 +473,24 @@ public class OpenPolicyAgentAccessController
       ObserverContext<MasterCoprocessorEnvironment> ctx,
       List<TableName> tableNamesList,
       List<TableDescriptor> descriptors,
-      String regex) {
-    // allow for all users
+      String regex)
+      throws IOException {
+    // From upstream:
+    // We are delegating the authorization check to postGetTableDescriptors as we don't have
+    // any concrete set of table names when a regex is present or the full list is requested.
+    if (regex == null && tableNamesList != null && !tableNamesList.isEmpty()) {
+      User user = getActiveUser(ctx);
+      TableName[] sns = null;
+      try (Admin admin = ctx.getEnvironment().getConnection().getAdmin()) {
+        sns = admin.listTableNames();
+        if (sns == null) return;
+        for (TableName tableName : tableNamesList) {
+          // Skip checks for a table that does not exist
+          if (!admin.tableExists(tableName)) continue;
+          opaAclChecker.checkPermissionInfo(user, tableName, Action.CREATE);
+        }
+      }
+    }
   }
 
   @Override
@@ -479,16 +498,43 @@ public class OpenPolicyAgentAccessController
       ObserverContext<MasterCoprocessorEnvironment> ctx,
       List<TableName> tableNamesList,
       List<TableDescriptor> descriptors,
-      String regex) {
-    // allow for all users
+      String regex)
+      throws IOException {
+    // Skipping as checks in this case are already done by preGetTableDescriptors.
+    if (regex == null && tableNamesList != null && !tableNamesList.isEmpty()) {
+      return;
+    }
+    User user = getActiveUser(ctx);
+    // Retains only those which passes authorization checks, as the checks weren't done as part
+    // of preGetTableDescriptors.
+    Iterator<TableDescriptor> itr = descriptors.iterator();
+    while (itr.hasNext()) {
+      TableDescriptor htd = itr.next();
+      try {
+        opaAclChecker.checkPermissionInfo(user, htd.getTableName(), Action.CREATE);
+      } catch (AccessControlException e) {
+        itr.remove();
+      }
+    }
   }
 
   @Override
   public void postGetTableNames(
       ObserverContext<MasterCoprocessorEnvironment> ctx,
       List<TableDescriptor> descriptors,
-      String regex) {
-    // allow for all users
+      String regex)
+      throws IOException {
+    // Retains only those which passes authorization checks.
+    User user = getActiveUser(ctx);
+    Iterator<TableDescriptor> itr = descriptors.iterator();
+    while (itr.hasNext()) {
+      TableDescriptor htd = itr.next();
+      try {
+        opaAclChecker.checkPermissionInfo(user, htd.getTableName(), Action.CREATE);
+      } catch (AccessControlException e) {
+        itr.remove();
+      }
+    }
   }
 
   @Override
