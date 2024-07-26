@@ -253,8 +253,6 @@ public class OpenPolicyAgentAccessController
     if (TableName.META_TABLE_NAME.equals(tableName)) {
       return;
     }
-    LOG.trace("preGetOp: user [{}] on table [{}] with get [{}]", user, tableName, get);
-
     opaAclChecker.checkPermissionInfo(user, tableName, Action.READ);
   }
 
@@ -313,33 +311,35 @@ public class OpenPolicyAgentAccessController
       throws IOException {
     User user = getActiveUser(c);
     TableName tableName = c.getEnvironment().getRegionInfo().getTable();
-    // All users need read access to hbase:meta table.
-    if (TableName.META_TABLE_NAME.equals(tableName)) {
-      return hasNext;
-    }
     LOG.trace("preScannerNext: user [{}] on table [{}] with scan [{}]", user, tableName, s);
 
     requireScannerOwner(s);
-    opaAclChecker.checkPermissionInfo(user, tableName, Action.READ);
     return hasNext;
   }
 
   @Override
   public void preScannerClose(
       final ObserverContext<RegionCoprocessorEnvironment> c, final InternalScanner s)
-      throws AccessDeniedException {
+      throws IOException {
+    User user = getActiveUser(c);
+    TableName tableName = c.getEnvironment().getRegionInfo().getTable();
+    LOG.trace("preScannerClose: user [{}] on table [{}] with scan [{}]", user, tableName, s);
+
     requireScannerOwner(s);
   }
 
   @Override
   public void postScannerClose(
-      final ObserverContext<RegionCoprocessorEnvironment> c, final InternalScanner s) {
+      final ObserverContext<RegionCoprocessorEnvironment> c, final InternalScanner s)
+      throws IOException {
+    User user = getActiveUser(c);
+    TableName tableName = c.getEnvironment().getRegionInfo().getTable();
+    LOG.trace("postScannerClose: user [{}] on table [{}] with scan [{}]", user, tableName, s);
+
     scannerOwners.remove(s);
   }
 
-  /**
-   * This method is copied from the code in AccessController.
-   */
+  /** This method is copied from the code in AccessController. */
   private void requireScannerOwner(InternalScanner s) throws AccessDeniedException {
     if (!RpcServer.isInRpcCallContext()) {
       return;
