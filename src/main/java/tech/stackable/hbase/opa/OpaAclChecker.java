@@ -106,18 +106,17 @@ public class OpaAclChecker {
       throw new OpaException.SerializeFailed(e);
     }
 
-    String prettyPrinted;
-    try {
-      prettyPrinted = json.writerWithDefaultPrettyPrinter().writeValueAsString(query);
-    } catch (JsonProcessingException e) {
-      LOG.error(
-          "Could not pretty print the following request body (printing raw version instead): {}",
-          body);
-      throw new OpaException.SerializeFailed(e);
-    }
-
-    LOG.trace("Request body:\n{}", prettyPrinted);
     if (this.dryRun) {
+      String prettyPrinted;
+      try {
+        prettyPrinted = json.writerWithDefaultPrettyPrinter().writeValueAsString(query);
+      } catch (JsonProcessingException e) {
+        LOG.error(
+            "Could not pretty print the following request body (printing raw version instead): {}",
+            body);
+        throw new OpaException.SerializeFailed(e);
+      }
+      LOG.trace("Request body:\n{}", prettyPrinted);
       LOG.debug("Dry run request: omitting call.");
       return;
     }
