@@ -594,9 +594,7 @@ public class OpenPolicyAgentAccessController
       ObserverContext<MasterCoprocessorEnvironment> ctx, final TableName tableName)
       throws IOException {
     User user = getActiveUser(ctx);
-    LOG.debug("postTruncateTable: user [{}] on table [{}]", user, tableName);
-
-    opaAclChecker.checkPermissionInfo(user, tableName, Action.CREATE);
+    LOG.trace("postTruncateTable: user [{}] on table [{}]", user, tableName);
   }
 
   @Override
@@ -620,9 +618,7 @@ public class OpenPolicyAgentAccessController
       final TableDescriptor htd)
       throws IOException {
     User user = getActiveUser(c);
-    LOG.debug("postModifyTable: user [{}] on table [{}]", user, tableName);
-
-    opaAclChecker.checkPermissionInfo(user, tableName, Action.CREATE);
+    LOG.trace("postModifyTable: user [{}] on table [{}]", user, tableName);
   }
 
   @Override
