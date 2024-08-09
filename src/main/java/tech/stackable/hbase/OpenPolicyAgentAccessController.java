@@ -976,7 +976,7 @@ public class OpenPolicyAgentAccessController
     LOG.debug("preGetUserPermissions not implemented! {}/{}", userName, tableName);
   }
 
-  public void requirePermission(ObserverContext<?> ctx, String request, Action perm) {
+  private void requirePermission(ObserverContext<?> ctx, String request, Action perm) {
     LOG.debug("requirePermission not implemented! {}/{}", request, perm);
   }
 
