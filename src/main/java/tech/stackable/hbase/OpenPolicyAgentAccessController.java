@@ -773,6 +773,7 @@ public class OpenPolicyAgentAccessController
 
   /*********************************** Not implemented (yet) ***********************************/
 
+  @Override
   public String preModifyTableStoreFileTracker(
       ObserverContext<MasterCoprocessorEnvironment> c, TableName tableName, String dstSFT) {
     requirePermission(
