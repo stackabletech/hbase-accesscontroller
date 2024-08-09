@@ -980,7 +980,7 @@ public class OpenPolicyAgentAccessController
     LOG.debug("requirePermission not implemented! {}/{}", request, perm);
   }
 
-  public void requirePermission(
+  private void requirePermission(
       ObserverContext<?> ctx,
       String request,
       TableName tableName,
